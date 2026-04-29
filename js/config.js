@@ -1,5 +1,5 @@
 const CONFIG = {
-    isDemo: true,           
+    isDemo: false,           
     rutaFotos: "./fotos/",
     tiempos: {
         foto: 10000,        
