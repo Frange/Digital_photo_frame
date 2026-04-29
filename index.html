@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>iPad Dashboard Pro v52</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+    <div id="slot-top"></div>
+
+    <div id="status-container">
+        <div id="status-tag"></div>
+    </div>
+
+    <div id="bg-container"></div>
+    
+    <canvas id="weather-canvas"></canvas>
+    <div id="flash-overlay"></div>
+
+    <div class="header">
+        <div class="time-area glass-box">
+            <div id="time">00:00</div>
+            <div id="date">--</div>
+        </div>
+        <div class="weather-now glass-box">
+            <div class="temp-row">
+                <span id="main-icon">☀️</span>
+                <span id="temp-big">--ºC</span>
+            </div>
+            <div id="weather-status">--</div>
+        </div>
+    </div>
+
+    <div class="forecast-area">
+        <div class="loc-label">CABANILLAS DEL CAMPO</div>
+        <div id="forecast-box" style="display:flex;"></div>
+    </div>
+
+    <div class="footer-bar"></div>
+
+    <script src="js/config.js"></script>
+
+    <script src="js/top_banner.js"></script>
+    <script src="js/bottom_banner.js"></script>
+    <script src="js/main_content.js"></script>
+    <script src="js/weather_effects.js"></script>
+    <script src="js/gallery.js"></script>
+
+    <script>
+        function updateClock() {
+            const d = new Date();
+            document.getElementById('time').innerText = d.toLocaleTimeString('es-ES', {hour:'2-digit', minute:'2-digit'});
+            document.getElementById('date').innerText = d.toLocaleDateString('es-ES', {weekday:'long', day:'numeric', month:'long'});
+        }
+
+        window.onload = () => {
+            updateClock();
+            setInterval(updateClock, 1000);
+            
+            TopBanner.init();
+            BottomBanner.init();
+            MainContent.init();
+            WeatherEffects.init('weather-canvas');
+            Gallery.init();
+        };
+    </script>
+</body>
+</html>
