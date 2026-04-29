@@ -44,7 +44,7 @@ const MainContent = {
     getIcon(desc, esNoche = false) {
         desc = (desc || "").toLowerCase();
         if (desc.includes("tormenta")) return "⚡";
-        if (desc.includes("llovizna")) return "🌦️"; // Icono específico
+        if (desc.includes("llovizna")) return "🌦️";
         if (desc.includes("lluvia") || desc.includes("chubasco")) return "🌧️";
         if (desc.includes("nieve") || desc.includes("granizo")) return "❄️";
         if (desc.includes("nube") || desc.includes("nublado") || desc.includes("niebla") || desc.includes("bruma")) {
@@ -86,13 +86,11 @@ const MainContent = {
             const esNoche = ahora < sunriseDate || ahora > sunsetDate;
             const prefijo = esNoche ? "Noche: " : "Día: ";
 
-            // --- DETECCIÓN DE EFECTO CORREGIDA ---
             let estadoEfecto = "Sol"; 
             
             if (desc.includes("tormenta")) {
                 estadoEfecto = "Tormenta";
             } else if (desc.includes("llovizna")) { 
-                // Prioridad a Llovizna: Si la API dice "Llovizna", mandamos Llovizna
                 estadoEfecto = "Llovizna";
             } else if (desc.includes("lluvia") || desc.includes("chubasco")) {
                 estadoEfecto = "Lluvia";
@@ -121,8 +119,7 @@ const MainContent = {
                 setEffect(efectoFinal);
             }
 
-            document.getElementById('rain-info').innerText = `CABANILLAS: ${cur.lang_es[0].value.toUpperCase()} | HUMEDAD: ${cur.humidity}%`;
-            document.getElementById('temp-torrevieja').innerText = `TORREVIEJA: ${this.climaTorrevieja.current_condition[0].temp_C}ºC | ${this.climaTorrevieja.current_condition[0].lang_es[0].value.toUpperCase()}`;
+            // LINEAS DE BANNER ELIMINADAS PARA EVITAR CONFLICTOS DE COLOR
 
             this.renderForecastArea();
 
