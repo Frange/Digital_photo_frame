@@ -22,10 +22,5 @@ class Particle {
         if (typeof this.specificDraw === 'function') {
             this.specificDraw(ctx);
         }
-
-        // Lógica de salida de pantalla (limpieza)
-        if (this.y > this.canvas.height + 150 || this.x > this.canvas.width + 650) {
-            this.reset();
-        }
     }
 }

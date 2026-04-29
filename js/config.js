@@ -6,17 +6,24 @@ const CONFIG = {
         ciudad: 15000,      
         climaAPI: 300000,
         // TIEMPO DE CADA EFECTO EN LA DEMO (ms)
-        demoEfecto: 12000   // Cada efecto durará 12 segundos
+        demoEfecto: 20000   // Cada efecto durará 12 segundos
     },
 
     // PARÁMETROS DE EFECTOS
     efectos: {
         lluviaCantidad: 350,
         nieveCantidad: 200,
-        nubesCantidad: 120, // Aumentado para que se vean sí o sí
-        estrellasCantidad: 400, // Nuevo parámetro
+        
+        // --- NUEVOS PARÁMETROS PARA NUBES ---
+        nubesCantidad: 60,                // Densidad (cantidad de nubes a la vez)
+        nubesTransparencia: 0.08,         // Nivel de transparencia base (0.0 a 1.0)
+        nubesVelocidadIzquierda: 0.9,    // Velocidad base de las que van hacia la izquierda
+        nubesVelocidadDerecha: 0.73,      // Velocidad base de las que van hacia la derecha
+        nubesAlturaLimite: 0.30,          // Altura límite que pueden bajar (0.45 = 45% de la pantalla)
+        
+        estrellasCantidad: 400, 
         tormentaFrecuencia: 0.98,
-        nieblaVelocidad: 0.8 // Un poco más rápido para que se note
+        nieblaVelocidad: 0.8 
     },
 
     // Orden de los efectos en la demo
