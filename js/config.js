@@ -60,26 +60,6 @@ const CONFIG = {
     // Orden de los efectos en la demo
     demoModos: [
 
-        'Día: Nieve', 
-        'Día: Niebla', 
-
-        'Día: Tormenta y Lluvia', 
-        'Día: Lluvia', 
-        'Día: Nubes', 
-        'Día: Sol con nubes', 
-
-        
-
-
-        'Día: Sol', 
-
-        
-        'Día: Tormenta', 
-        'Día: Granizo', 
-
-        'Día: Viento fuerte',
-
-
         'Noche: Limpio', 
         'Noche: Nubes', 
         'Noche: Niebla', 
@@ -88,7 +68,20 @@ const CONFIG = {
         'Noche: Tormenta y Lluvia', 
         'Noche: Niebla', 
         'Noche: Granizo', 
-        'Noche: Nieve'
+        'Noche: Nieve',
+
+        'Día: Nieve', 
+        'Día: Niebla', 
+        'Día: Tormenta y Lluvia', 
+        'Día: Lluvia', 
+        'Día: Nubes', 
+        'Día: Sol con nubes', 
+        'Día: Sol', 
+        'Día: Tormenta', 
+        'Día: Granizo', 
+        'Día: Viento fuerte',
+
+
     ],
     ciudades: [
         { nombre: "Cabanillas del Campo", query: "Cabanillas+del+Campo" },
