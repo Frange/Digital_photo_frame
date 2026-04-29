@@ -1,42 +1,41 @@
 const Gallery = {
+    currentIndex: 0,
+
     init() {
         this.container = document.getElementById('bg-container');
-        this.renderRandomBackground();
+        this.updateBackground();
         
-        // Rotación automática cada 10s (según CONFIG)
-        setInterval(() => this.renderRandomBackground(), CONFIG.tiempos.foto);
+        // Rotación según tu configuración
+        setInterval(() => this.updateBackground(), CONFIG.tiempos.foto);
     },
 
-    renderRandomBackground() {
-        if (!CONFIG.files.length) return;
+    updateBackground() {
+        if (!CONFIG.files || !CONFIG.files.length) return;
         
-        const randomFile = CONFIG.files[Math.floor(Math.random() * CONFIG.files.length)];
+        const randomFile = CONFIG.files[this.currentIndex];
         const extension = randomFile.split('.').pop().toLowerCase();
         const path = CONFIG.rutaFotos + randomFile;
         
         this.container.innerHTML = '';
 
-        let el;
-        if (extension === 'mp4') {
-            el = document.createElement('video');
-            el.src = path;
-            el.autoplay = true;
-            el.muted = true;
-            el.loop = true;
-            el.playsInline = true;
-        } else {
-            el = document.createElement('img');
-            el.src = path;
-        }
-
-        el.id = 'bg-main';
-        // Forzamos el estilo para asegurar el aspect ratio
-        el.style.width = "auto";
-        el.style.height = "auto";
-        el.style.maxWidth = "100%";
-        el.style.maxHeight = "100%";
-        el.style.objectFit = "contain"; 
+        let el = (extension === 'mp4') ? document.createElement('video') : document.createElement('img');
         
+        if (extension === 'mp4') {
+            el.autoplay = true; el.muted = true; el.loop = true; el.playsInline = true;
+        }
+        
+        el.src = path;
+        el.id = 'bg-main';
         this.container.appendChild(el);
+
+        // --- ACTUALIZAR CAJA GALERÍA (ABAJO DERECHA) ---
+        const countEl = document.getElementById('gallery-count');
+        const nameEl = document.getElementById('file-name');
+        
+        if(countEl) countEl.innerText = `${this.currentIndex + 1} / ${CONFIG.files.length}`;
+        if(nameEl) nameEl.innerText = randomFile;
+
+        // Avanzar índice para la próxima vez
+        this.currentIndex = (this.currentIndex + 1) % CONFIG.files.length;
     }
 };

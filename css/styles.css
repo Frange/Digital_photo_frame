@@ -32,20 +32,7 @@ body, html { height: 100%; width: 100%; background: #000; color: white; font-fam
 .news-source { color: #ffcc00; font-weight: 900; border-right: 1px solid #333; padding-right: 12px; margin-right: 12px; font-size: 0.75rem; flex-shrink: 0; }
 #news-text { font-size: 0.85rem; color: #ccc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; text-transform: uppercase; }
 
-/* --- CABECERA: HORA Y CLIMA (CORREGIDO) --- */
-
-.glass-box { 
-    background: rgba(0,0,0,0.65); 
-    border-radius: 18px; 
-    backdrop-filter: blur(25px); 
-    border: 1px solid rgba(255,255,255,0.1); 
-    padding: 20px 25px;      /* Margen interior idéntico para ambas */
-    min-width: 280px;        /* Ancho mínimo igualado */
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-}
-
+/* --- CABECERA: HORA Y CLIMA --- */
 .header { 
     position: absolute; 
     top: 55px; 
@@ -53,80 +40,92 @@ body, html { height: 100%; width: 100%; background: #000; color: white; font-fam
     padding: 0 25px; 
     display: flex; 
     justify-content: space-between; 
-    align-items: stretch;    /* Ambas cajas miden lo mismo de alto */
+    align-items: stretch; 
     z-index: 20; 
 }
 
-/* Caja de la Hora (Izquierda) */
+.glass-box { 
+    background: rgba(0,0,0,0.65); 
+    border-radius: 18px; 
+    backdrop-filter: blur(25px); 
+    border: 1px solid rgba(255,255,255,0.1); 
+    padding: 15px 15px; /* Reducido margen lateral solicitado */
+    min-width: 280px; 
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+/* Caja de la Hora e Izquierda (Alineada) */
 .time-area { 
-    text-align: left; 
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
 }
-
-#time { 
-    font-size: 5.5rem; 
-    font-weight: 700; 
-    line-height: 0.9; 
-    letter-spacing: -2px; 
-}
-
-#date { 
-    font-size: 1.2rem; 
-    margin-top: 10px; 
-    display: block; 
-    text-transform: capitalize; 
-    opacity: 0.8; 
-}
+#time { font-size: 5.5rem; font-weight: 700; line-height: 0.9; letter-spacing: -2px; }
+#date { font-size: 1.2rem; margin-top: 10px; display: block; text-transform: capitalize; opacity: 0.8; }
 
 /* Caja del Clima Actual (Derecha) */
-.weather-now { 
-    text-align: right; 
+.weather-now { text-align: right; }
+.temp-row { display: flex; align-items: center; justify-content: flex-end; }
+
+#main-icon { 
+    font-size: 3.5rem; /* Sutilmente más grande */
+    margin-right: 12px; 
 }
+#temp-big { font-size: 5rem; font-weight: 200; line-height: 0.9; }
+#weather-status { color: #ffcc00; font-weight: 800; text-transform: uppercase; margin-top: 10px; font-size: 0.75rem; }
 
-.temp-row {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-}
-
-#main-icon {
-    font-size: 3rem;
-    margin-right: 10px;
-}
-
-#temp-big { 
-    font-size: 5rem; 
-    font-weight: 200; 
-    line-height: 0.9; 
-}
-
-#weather-status { 
-    color: #ffcc00; 
-    font-weight: 800; 
-    text-transform: uppercase; 
-    margin-top: 10px; 
-    font-size: 0.75rem; 
-}
-
-/* --- EFECTOS Y OTROS --- */
-
-#flash-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: white;
-    opacity: 0;
-    pointer-events: none;
-    z-index: 999;
-    transition: opacity 0.05s ease-out;
-}
-
-/* PRONÓSTICO */
+/* --- PRONÓSTICO (INFERIOR IZQUIERDA) --- */
 .forecast-area { position: absolute; bottom: 65px; left: 25px; z-index: 20; }
-.f-day { width: 95px; text-align: center; background: rgba(15, 15, 15, 0.9); padding: 15px 5px; border-radius: 15px; border: 1px solid #333; margin-right: 10px; display: inline-block; }
-.f-name { font-size: 0.75rem; color: #ffcc00; font-weight: 900; display: block; margin-bottom: 5px; }
-.loc-label { font-size: 0.8rem; font-weight: 900; margin-bottom: 10px; color: white; }
+
+/* Ciudad en cuadrado independiente */
+.loc-label { 
+    display: inline-block;
+    background: rgba(15, 15, 15, 0.9);
+    color: #ffcc00; 
+    padding: 8px 15px; 
+    border-radius: 10px; 
+    border: 1px solid #333;
+    font-size: 0.85rem; 
+    font-weight: 900; 
+    margin-bottom: 12px; 
+    text-transform: uppercase;
+}
+
+/* Cajas de días (Icono abajo) */
+.f-day { 
+    width: 110px; /* Más ancho para nombres largos */
+    text-align: center; 
+    background: rgba(15, 15, 15, 0.9); 
+    padding: 15px 5px; 
+    border-radius: 15px; 
+    border: 1px solid #333; 
+    margin-right: 10px; 
+    display: inline-block; 
+}
+.f-name { font-size: 0.7rem; color: #ffcc00; font-weight: 900; display: block; margin-bottom: 5px; }
+.f-temp { font-size: 1rem; font-weight: bold; display: block; margin-bottom: 5px; }
+.f-icon { font-size: 1.8rem; display: block; } /* Icono abajo */
+
+/* --- GALERÍA (INFERIOR DERECHA) --- */
+#gallery-info {
+    position: absolute; bottom: 65px; right: 25px; 
+    text-align: right; z-index: 100;
+}
+#gallery-count {
+    background: #ffcc00; color: #000; 
+    display: inline-block; padding: 2px 10px; 
+    font-weight: 900; font-size: 0.75rem; border-radius: 4px;
+}
+#file-name {
+    font-size: 0.6rem; color: rgba(255,255,255,0.4); 
+    margin-top: 5px; font-family: monospace;
+}
 
 /* FOOTER */
 .footer-bar { position: absolute; bottom: 0; width: 100%; background: #000; height: 45px; display: flex; justify-content: space-between; align-items: center; padding: 0 25px; z-index: 30; border-top: 1px solid #222; font-size: 0.8rem; font-weight: 900; text-transform: uppercase; }
+
+#flash-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; opacity: 0; pointer-events: none; z-index: 999; transition: opacity 0.05s ease-out; }
