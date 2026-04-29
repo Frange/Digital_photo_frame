@@ -109,7 +109,17 @@ const MainContent = {
             const efectoFinal = prefijo + estadoEfecto;
 
             document.getElementById('temp-big').innerText = cur.temp_C + "ºC";
-            document.getElementById('weather-status').innerText = cur.lang_es[0].value.toUpperCase();
+            
+            // --- DENTRO DE updateAllData() ---
+            const statusEl = document.getElementById('weather-status');
+            if (statusEl) {
+                // Usamos un <span> para el texto del clima para poder controlarlo por CSS
+                statusEl.innerHTML = `
+                    <span style="color: #ffcc00; font-weight: bold;">AHORA:</span> 
+                    <span class="weather-text">${cur.lang_es[0].value}</span>
+                `;
+            }
+
             document.getElementById('main-icon').innerText = this.getIcon(desc, esNoche);
 
             const demoState = document.getElementById('demo-state');
@@ -118,8 +128,6 @@ const MainContent = {
             if (typeof setEffect === 'function') {
                 setEffect(efectoFinal);
             }
-
-            // LINEAS DE BANNER ELIMINADAS PARA EVITAR CONFLICTOS DE COLOR
 
             this.renderForecastArea();
 
