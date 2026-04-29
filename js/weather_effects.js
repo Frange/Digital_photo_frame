@@ -14,16 +14,11 @@ const WeatherEffects = {
         window.addEventListener('resize', () => this.resize());
         this.resize();
         
-        // MODIFICACIÓN: Ya no cargamos CONFIG.demoModos[0] por defecto.
-        // Esperamos a que MainContent envíe el clima real.
-        // Si quieres un estado inicial neutro hasta que cargue la API:
         this.currentMode = "Cargando...";
-
         this.animate();
 
-        // Solo activamos el carrusel si el modo Demo está explícitamente en TRUE
         if (typeof CONFIG !== 'undefined' && CONFIG.isDemo) {
-            console.log("Modo DEMO activo: Rotando efectos cada " + CONFIG.tiempos.demoEfecto + "ms");
+            console.log("Modo DEMO activo");
             setInterval(() => {
                 this.demoIdx = (this.demoIdx + 1) % CONFIG.demoModos.length;
                 this.setEffect(CONFIG.demoModos[this.demoIdx]);
@@ -36,12 +31,8 @@ const WeatherEffects = {
         this.canvas.height = window.innerHeight;
     },
 
-    // Esta es la función que llama MainContent.js
     setEffect(m) {
-        if (!m) return;
-        
-        // Si el efecto es el mismo que ya tenemos, no reiniciamos las partículas (evita parpadeos)
-        if (this.currentMode === m) return;
+        if (!m || this.currentMode === m) return;
 
         console.log("Canvas recibiendo nuevo efecto:", m);
         this.currentMode = m;
@@ -51,55 +42,64 @@ const WeatherEffects = {
         
         const cfg = CONFIG.efectos;
         
-        // Actualizar etiqueta de estado si existe
         const tag = document.getElementById('status-tag');
         if (tag) tag.innerText = m.toUpperCase();
 
-        // --- CREACIÓN DE PARTÍCULAS SEGÚN MODO REAL ---
-        
-        // Estrellas (Si es noche)
+        // 1. Estrellas
         if (this.isNight) {
             for (let i = 0; i < (cfg.estrellasCantidad || 400); i++) {
                 this.particles.push(new Particle('star', this.canvas));
             }
         }
 
-        // Niebla
+        // 2. Niebla
         if (low.includes('niebla')) {
             for (let i = 0; i < (cfg.nieblaCantidad || 50); i++) {
                 this.particles.push(new Particle('fog', this.canvas));
             }
         }
 
-        // Nubes (Día o Noche)
+        // 3. Nubes
         if (low.includes('nubes') || low.includes('tormenta') || low.includes('nublado')) {
             for (let i = 0; i < (cfg.nubesCantidad || 100); i++) {
                 this.particles.push(new Particle('cloud', this.canvas));
             }
         }
-
-        // Lluvia / Llovizna
-        if (low.includes('lluvia') || low.includes('llovizna')) {
+        
+        // --- 4. GESTIÓN DE LLUVIA / LLOVIZNA (EXCLUYENTE) ---
+        if (low.includes('llovizna')) {
+            // Caso Llovizna: 20 partículas lentas y finas
+            const cant = (typeof LittleRain !== 'undefined') ? LittleRain.params.cantidad : 20; 
+            for (let i = 0; i < cant; i++) {
+                const p = new Particle('rain', this.canvas); 
+                if (typeof LittleRain !== 'undefined') {
+                    LittleRain.patch(p, this.canvas.width, this.canvas.height);
+                }
+                this.particles.push(p);
+            }
+        } 
+        else if (low.includes('lluvia') || low.includes('chubasco')) {
+            // Caso Lluvia Normal: 550 partículas rápidas
             for (let i = 0; i < (cfg.lluviaCantidad || 550); i++) {
                 this.particles.push(new Particle('rain', this.canvas));
             }
         }
 
-        // Granizo
+        // 5. Granizo
         if (low.includes('granizo')) {
             for (let i = 0; i < (cfg.granizoCantidad || 150); i++) {
                 this.particles.push(new Particle('hail', this.canvas));
             }
         }
 
-        // Nieve
+        // 6. Nieve
         if (low.includes('nieve')) {
             for (let i = 0; i < (cfg.nieveCantidad || 400); i++) {
                 this.particles.push(new Particle('snow', this.canvas));
             }
         }
 
-        // Viento
+        // 7. Viento
         if (low.includes('viento')) {
             for (let i = 0; i < 40; i++) {
                 this.particles.push(new Particle('wind', this.canvas));
@@ -114,15 +114,12 @@ const WeatherEffects = {
         const low = this.currentMode.toLowerCase();
         const cfg = CONFIG.efectos;
 
-        // 1. FONDO DE NOCHE
         if (this.isNight) {
             const hLimite = cfg.nocheAlturaLimite || 0.65;
             const grad = this.ctx.createLinearGradient(0, 0, 0, h * hLimite);
-            
             grad.addColorStop(0, `rgba(0, 2, 10, ${cfg.nocheOscuridad || 0.99})`);
             grad.addColorStop(0.5, `rgba(5, 10, 30, ${cfg.nocheTransparencia || 0.8})`);
             grad.addColorStop(1, "rgba(0, 0, 0, 0)");
-            
             this.ctx.fillStyle = grad;
             this.ctx.fillRect(0, 0, w, h);
 
@@ -131,7 +128,6 @@ const WeatherEffects = {
             }
         }
 
-        // 2. EFECTOS ESPECIALES DE FONDO (SOL, RAYOS, MUÑECOS)
         if ((low.includes('sol') || low.includes('despejado')) && !this.isNight) {
             if (typeof SunEffect !== 'undefined') SunEffect.draw(this.ctx, w, h);
         }
@@ -144,14 +140,11 @@ const WeatherEffects = {
             SnowmanEffect.draw(this.ctx, w, h);
         }
 
-        // 3. DIBUJO DE PARTÍCULAS
         this.particles.forEach(p => p.draw(this.ctx));
-        
         requestAnimationFrame(() => this.animate());
     }
 };
 
-// Función global de puente (para que MainContent.js pueda llamarla fácilmente)
 window.setEffect = function(mode) {
     WeatherEffects.setEffect(mode);
 };

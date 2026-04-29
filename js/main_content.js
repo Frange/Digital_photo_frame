@@ -12,14 +12,11 @@ const MainContent = {
         this.updateClock();
         setInterval(() => this.updateClock(), 1000);
 
-        // Carga inicial
         this.updateAllData();
 
-        // Intervalo de API (5 minutos)
         const intervalAPI = (typeof CONFIG !== 'undefined' && CONFIG.tiempos) ? CONFIG.tiempos.climaAPI : 300000;
         setInterval(() => this.updateAllData(), intervalAPI);
 
-        // Intervalo de rotación de ciudad (predicción inferior)
         const intervalRotacion = (typeof CONFIG !== 'undefined' && CONFIG.tiempos) ? CONFIG.tiempos.ciudad : 20000;
         setInterval(() => {
             if (typeof CONFIG !== 'undefined') {
@@ -28,7 +25,6 @@ const MainContent = {
             }
         }, intervalRotacion);
 
-        // NOTICIAS: Carga diferida para evitar bloqueos iniciales
         setTimeout(() => {
             if (typeof TopBanner !== 'undefined') {
                 console.log("Iniciando noticias...");
@@ -48,7 +44,8 @@ const MainContent = {
     getIcon(desc, esNoche = false) {
         desc = (desc || "").toLowerCase();
         if (desc.includes("tormenta")) return "⚡";
-        if (desc.includes("lluvia") || desc.includes("llovizna") || desc.includes("chubasco")) return "🌧️";
+        if (desc.includes("llovizna")) return "🌦️"; // Icono específico
+        if (desc.includes("lluvia") || desc.includes("chubasco")) return "🌧️";
         if (desc.includes("nieve") || desc.includes("granizo")) return "❄️";
         if (desc.includes("nube") || desc.includes("nublado") || desc.includes("niebla") || desc.includes("bruma")) {
              return esNoche ? "☁️" : "⛅";
@@ -58,7 +55,6 @@ const MainContent = {
 
     async updateAllData() {
         try {
-            // 1. Obtener datos de la API
             const rCab = await fetch(`https://wttr.in/Cabanillas+del+Campo?format=j1&lang=es`).then(res => res.json());
             this.climaCabanillas = rCab;
 
@@ -68,7 +64,6 @@ const MainContent = {
             const cur = rCab.current_condition[0];
             const desc = cur.lang_es[0].value.toLowerCase();
             
-            // 2. Cálculo preciso de Amanecer / Anochecer
             const ahora = new Date();
             const sunriseStr = rCab.weather[0].astronomy[0].sunrise;
             const sunsetStr = rCab.weather[0].astronomy[0].sunset;
@@ -88,16 +83,18 @@ const MainContent = {
             const sunriseDate = parseTime(sunriseStr);
             const sunsetDate = parseTime(sunsetStr);
             
-            // Determinar si es de noche
             const esNoche = ahora < sunriseDate || ahora > sunsetDate;
             const prefijo = esNoche ? "Noche: " : "Día: ";
 
-            // 3. Determinar el efecto basándose en la descripción de la API
-            let estadoEfecto = "Sol"; // Por defecto
+            // --- DETECCIÓN DE EFECTO CORREGIDA ---
+            let estadoEfecto = "Sol"; 
             
             if (desc.includes("tormenta")) {
-                estadoEfecto = "Tormenta y Lluvia";
-            } else if (desc.includes("lluvia") || desc.includes("llovizna") || desc.includes("chubasco")) {
+                estadoEfecto = "Tormenta";
+            } else if (desc.includes("llovizna")) { 
+                // Prioridad a Llovizna: Si la API dice "Llovizna", mandamos Llovizna
+                estadoEfecto = "Llovizna";
+            } else if (desc.includes("lluvia") || desc.includes("chubasco")) {
                 estadoEfecto = "Lluvia";
             } else if (desc.includes("granizo")) {
                 estadoEfecto = "Granizo";
@@ -108,32 +105,25 @@ const MainContent = {
             } else if (desc.includes("nube") || desc.includes("nublado")) {
                 estadoEfecto = esNoche ? "Nubes" : "Sol con nubes";
             } else {
-                // Cielo despejado
                 estadoEfecto = esNoche ? "Limpio" : "Sol";
             }
 
             const efectoFinal = prefijo + estadoEfecto;
 
-            // 4. Actualizar Interfaz (UI)
             document.getElementById('temp-big').innerText = cur.temp_C + "ºC";
             document.getElementById('weather-status').innerText = cur.lang_es[0].value.toUpperCase();
             document.getElementById('main-icon').innerText = this.getIcon(desc, esNoche);
 
-            // Actualizar etiqueta amarilla central
             const demoState = document.getElementById('demo-state');
             if (demoState) demoState.innerText = efectoFinal.toUpperCase();
 
-            // 5. Inyectar efecto al Canvas
             if (typeof setEffect === 'function') {
-                console.log("Cambiando efecto visual a:", efectoFinal);
                 setEffect(efectoFinal);
             }
 
-            // 6. Footer Info
             document.getElementById('rain-info').innerText = `CABANILLAS: ${cur.lang_es[0].value.toUpperCase()} | HUMEDAD: ${cur.humidity}%`;
             document.getElementById('temp-torrevieja').innerText = `TORREVIEJA: ${this.climaTorrevieja.current_condition[0].temp_C}ºC | ${this.climaTorrevieja.current_condition[0].lang_es[0].value.toUpperCase()}`;
 
-            // 7. Renderizar predicción inferior
             this.renderForecastArea();
 
         } catch (e) {
@@ -143,10 +133,8 @@ const MainContent = {
 
     renderForecastArea() {
         if (!this.climaCabanillas || !this.climaTorrevieja) return;
-
         const esCabanillas = (this.currentIdx === 0);
         const dataMostrada = esCabanillas ? this.climaCabanillas : this.climaTorrevieja;
-        
         const label = document.querySelector('.loc-label');
         if (label) label.innerText = esCabanillas ? "CABANILLAS DEL CAMPO" : "TORREVIEJA";
 
@@ -155,13 +143,10 @@ const MainContent = {
             box.innerHTML = dataMostrada.weather.slice(0, 3).map(day => {
                 const d = new Date(day.date);
                 const hoy = new Date();
-                
-                // Lógica para que el primer cuadro diga "HOY"
                 let nombreDia = d.toLocaleDateString('es-ES', { weekday: 'short' }).toUpperCase();
                 if (d.getDate() === hoy.getDate() && d.getMonth() === hoy.getMonth()) {
                     nombreDia = "HOY";
                 }
-
                 return `
                 <div class="f-day">
                     <span class="f-name">${nombreDia}</span>
@@ -173,5 +158,4 @@ const MainContent = {
     }
 };
 
-// Arrancamos la clase
 MainContent.init();

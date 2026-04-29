@@ -3,7 +3,7 @@ const CONFIG = {
     rutaFotos: "./fotos/",
     tiempos: {
         foto: 10000,        
-        ciudad: 5000,      
+        ciudad: 30000,      
         climaAPI: 300000,
         // TIEMPO DE CADA EFECTO EN LA DEMO (ms)
         demoEfecto: 20000   // Cada efecto durará 12 segundos
@@ -62,22 +62,24 @@ const CONFIG = {
     // Orden de los efectos en la demo
     demoModos: [
 
-        'Noche: Granizo', 
         'Día: Sol', 
         'Noche: Limpio', 
         'Noche: Nubes', 
         'Noche: Lluvia', 
+        'Noche: Llovizna', 
         'Noche: Tormenta', 
         'Noche: Tormenta y Lluvia', 
         'Noche: Niebla', 
         'Noche: Nieve',
         'Noche: Niebla', 
 
+        'Noche: Granizo', 
         'Día: Niebla', 
         'Día: Nieve', 
         'Día: Niebla', 
         'Día: Tormenta y Lluvia', 
         'Día: Lluvia', 
+        'Día: Llovizna', 
         'Día: Nubes', 
         'Día: Sol con nubes', 
         'Día: Tormenta', 
