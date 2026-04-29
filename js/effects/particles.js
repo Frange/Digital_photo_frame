@@ -6,20 +6,17 @@ class Particle {
     }
 
     reset() {
-        var w = this.canvas.width;
-        var h = this.canvas.height;
-        // Posición inicial común
-        this.x = Math.random() * (w + 600) - 300;
-        
-        // Llamamos al reset específico del tipo
-        if (typeof this.specificReset === 'function') {
+        const w = this.canvas.width;
+        const h = this.canvas.height;
+        // Si el archivo específico (clouds.js, snow.js) tiene un reset, lo usa
+        if (this.specificReset) {
             this.specificReset(w, h);
         }
     }
 
     draw(ctx) {
-        // Llamamos al dibujo específico del tipo
-        if (typeof this.specificDraw === 'function') {
+        // Si el archivo específico tiene un draw, lo usa
+        if (this.specificDraw) {
             this.specificDraw(ctx);
         }
     }

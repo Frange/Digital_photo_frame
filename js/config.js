@@ -10,36 +10,81 @@ const CONFIG = {
     },
 
     // PARÁMETROS DE EFECTOS
-    efectos: {
-        lluviaCantidad: 350,
-        nieveCantidad: 200,
-        
-        // --- NUEVOS PARÁMETROS PARA NUBES ---
-        nubesCantidad: 60,                // Densidad (cantidad de nubes a la vez)
-        nubesTransparencia: 0.08,         // Nivel de transparencia base (0.0 a 1.0)
-        nubesVelocidadIzquierda: 0.9,    // Velocidad base de las que van hacia la izquierda
-        nubesVelocidadDerecha: 0.73,      // Velocidad base de las que van hacia la derecha
-        nubesAlturaLimite: 0.30,          // Altura límite que pueden bajar (0.45 = 45% de la pantalla)
-        
-        estrellasCantidad: 400, 
-        tormentaFrecuencia: 0.98,
-        nieblaVelocidad: 0.8 
+   efectos: {
+        // NUBES
+        nubesCantidad: 100,
+        nubesTransparencia: 0.09,
+        nubesVelocidadIzquierda: 0.4,
+        nubesVelocidadDerecha: 0.66,
+        nubesAlturaLimite: 0.30,
+
+        // SOL
+        solBrilloNucleo: 8.0,      // Multiplicador de brillo central (0.0 a 1.0)
+        solBrilloHalos: 0.10,      // Brillo de los halos circulares
+        solRotacionVelocidad: 0.000012, 
+        solEscalaFuga: 8,          // Qué tanto se estira el destello (vapor)
+
+        // NOCHE
+        nocheOscuridad: 1.0,       // 1.0 = Negro puro arriba
+        estrellasCantidad: 400,
+        estrellasParpadeo: 0.001,  // Velocidad del brillo
+        estrellasRotacion: 0.0003, // Velocidad de giro del firmamento
+        estrellasFugacesFrecuencia: 0.0002, // Probabilidad por frame (~3-5 cada 5 min)
+
+        // LLUVIA
+        lluviaCantidad: 550,
+        lluviaVelocidad: 25,
+
+        // GRANIZO
+        granizoCantidad: 150,
+        granizoVelocidad: 15,
+
+        // NIEVE
+        nieveCantidad: 400,
+        nieveSueloOpacidad: 0.8,  // Añadido: 0.8 es bastante opaco, bajalo a 0.5 si quieres que sea más transparente.
+
+        // NIEBLA
+        nieblaVelocidad: 3.00, 
+        nieblaCantidad: 300,                // Densidad de "bocanadas" de niebla
+        nieblaTransparencia: 0.10,         // Nivel de opacidad base (0.0 a 1.0). Mantener bajo para que se vea la foto.
+        nieblaAlturaMinima: 0.1,           // Altura mínima en pantalla donde puede APARACER (0.6 = 60% de la pantalla hacia abajo).
+        nieblaAlturaMaxima: 0.1,           // Altura máxima hasta donde puede bajar (1.0 = suelo).
+
+        // TORMENTA
+        tormentaFrecuencia: 0.982,
+        tormentaRayoFrecuencia: 0.015,      // Probabilidad de rayo dibujado por frame
+        tormentaRelampagoFrecuencia: 0.02,  // Probabilidad de flash de fondo por frame
+        tormentaVelocidadDesvanecimiento: 0.03, // Menos de 0.05 es más lento/suave
     },
 
     // Orden de los efectos en la demo
     demoModos: [
-        'Día: Sol con nubes', 
-        'Día: Nubes', 
-        'Día: Sol', 
-        'Día: Granizo', 
-        'Día: Lluvia', 
-        'Día: Tormenta y Lluvia', 
-        'Día: Niebla', 
+
         'Día: Nieve', 
+        'Día: Niebla', 
+
+        'Día: Tormenta y Lluvia', 
+        'Día: Lluvia', 
+        'Día: Nubes', 
+        'Día: Sol con nubes', 
+
+        
+
+
+        'Día: Sol', 
+
+        
+        'Día: Tormenta', 
+        'Día: Granizo', 
+
         'Día: Viento fuerte',
+
+
         'Noche: Limpio', 
         'Noche: Nubes', 
+        'Noche: Niebla', 
         'Noche: Lluvia', 
+        'Noche: Tormenta', 
         'Noche: Tormenta y Lluvia', 
         'Noche: Niebla', 
         'Noche: Granizo', 

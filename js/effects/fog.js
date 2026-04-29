@@ -2,12 +2,20 @@ var originalResetFog = Particle.prototype.specificReset;
 Particle.prototype.specificReset = function(w, h) {
     if (originalResetFog) originalResetFog.apply(this, arguments);
     
-    if (this.type === 'fog') {
-        this.x = Math.random() * (w + 400) - 200;
-        this.y = Math.random() * h;
+    if (this.type === 'fog' || this.type === 'niebla') {
+        const cfg = CONFIG.efectos;
+        this.x = Math.random() * (w + 600) - 300;
+        
+        // --- LÓGICA DE ALTURA RESPETANDO CONFIG ---
+        // Usamos los límites: de 0.2 (arriba) a 0.6 (máximo hasta donde baja)
+        const minY = h * cfg.nieblaAlturaMaxima; // Ejemplo: h * 0.2
+        const maxY = h * cfg.nieblaAlturaMinima; // Ejemplo: h * 0.6
+        this.y = minY + Math.random() * (maxY - minY);
+
         this.r = 300 + Math.random() * 200;
-        this.vx = (Math.random() > 0.5 ? 1 : -1) * (0.3 + Math.random() * CONFIG.efectos.nieblaVelocidad);
-    } 
+        this.vx = (Math.random() > 0.5 ? 1 : -1) * (0.2 + Math.random() * cfg.nieblaVelocidad);
+        this.op = cfg.nieblaTransparencia || 0.08;
+    }
     else if (this.type === 'wind' || this.type === 'wind-cloud') {
         this.x = Math.random() * w;
         this.y = Math.random() * h;
