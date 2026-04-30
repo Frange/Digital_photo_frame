@@ -1,116 +1,92 @@
-/**
- * GESTIÓN DEL BANNER DE NOTICIAS (Top Banner)
- * Versión con protección total contra errores 422/500 y mezcla aleatoria.
- */
-
 const TopBanner = {
     sources: [
-        // --- ACTUALIDAD Y DEPORTES ---
         'https://e00-elmundo.uecdn.es/elmundo/rss/portada.xml',
         'https://feeds.elpais.com/mrss-s/pages/ep/site/elpais.com/portada',
+        'https://www.abc.es/rss/2.0/espana/',
         'https://e00-marca.uecdn.es/rss/portada.xml',
-        
-        // --- ECONOMÍA ---
         'https://e00-expansion.uecdn.es/rss/portada.xml',
-        'https://cincodias.elpais.com/seccion/rss/fortunas/',
-        
-        // --- CIENCIA Y TECNOLOGÍA ---
-        'https://www.rtve.es/api/noticias/tecnologia/rss.xml',
-        'https://www.agenciasinc.es/rss',
-        'https://www.nationalgeographic.com.es/feeds/ciencia.xml',
-        'https://naukas.com/feed/', // Divulgación científica
-        
-        // --- CULTURA Y SOCIEDAD ---
-        'https://www.abc.es/rss/2.0/cultura/',
-        'https://elpais.com/rss/elpais/inenglish.xml', // Aunque diga English, el feed RSS2JSON suele traer la versión traducida o filtrada si se fuerza, pero mejor lo vigilamos con el isSpanish.
-        
-        // --- EUROPA Y MUNDO ---
-        'https://www.europapress.es/rss/rss.aspx?ch=00066',
+        'https://www.eldiario.es/rss/',
+        'https://rss.elconfidencial.com/espana/'
     ],
+
     sourceMap: {
         'elmundo': 'EL MUNDO',
         'elpais': 'EL PAÍS',
+        'abc': 'ABC',
         'marca': 'MARCA',
         'expansion': 'EXPANSIÓN',
-        'cincodias': 'CINCO DÍAS',
-        'rtve': 'RTVE TECNO',
-        'agenciasinc': 'CIENCIA SINC',
-        'nationalgeographic': 'NAT GEO',
-        'naukas': 'NAUKAS CIENCIA',
-        'abc.es': 'ABC CULTURA',
-        'europapress': 'EUROPA PRESS',
+        'eldiario': 'EL DIARIO',
+        'elconfidencial': 'EL CONFIDENCIAL'
     },
+
     allNews: [],
     currentIndex: 0,
-    isLoading: false,
+    timer: null, // Para controlar el intervalo
 
     init() {
+        if (this.timer) {
+            clearInterval(this.timer);
+            this.timer = null;
+        }
+        
         const slot = document.getElementById('slot-top');
         if (slot) {
             slot.innerHTML = `
                 <div id="demo-label">ESTADO: <span id="demo-state">SINCRO</span></div>
                 <div class="news-banner">
-                    <div class="news-source" id="source-name">NOTICIAS</div>
-                    <div id="news-text">Sincronizando fuentes globales...</div>
+                    <div class="news-source" id="source-name">SISTEMA</div>
+                    <div id="news-text">Cargando titulares...</div>
                 </div>
             `;
         }
+        this.loadNews();
         
-        this.loadNewsFromAllSources();
-        setInterval(() => this.rotate(), 10000);
-        setInterval(() => this.loadNewsFromAllSources(), 1200000);
+        // Usamos el tiempo de CONFIG, si no existe usa 20 seg por defecto
+        const tiempoRotacion = (typeof CONFIG !== 'undefined' && CONFIG.tiempos.noticias) 
+                                ? CONFIG.tiempos.noticias 
+                                : 20000;
+
+        this.timer = setInterval(() => this.rotate(), tiempoRotacion);
     },
 
-    async loadNewsFromAllSources() {
-        if (this.isLoading) return;
-        this.isLoading = true;
+    async loadNews() {
         this.updateState("SINCRO...");
-        
-        let temporaryNewsStorage = [];
+        let results = [];
 
-        // Ejecutamos las peticiones. Si una falla, no afecta a las demás.
-        const fetchPromises = this.sources.map(async (url) => {
+        for (const url of this.sources) {
             try {
-                // Añadimos un parámetro random para evitar cacheos que causen 422
-                const cacheBuster = `&_t=${Date.now()}`;
-                const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(url)}${cacheBuster}`);
+                // Cache busting con timestamp para evitar bloqueos
+                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}&t=${Date.now()}`;
+                const response = await fetch(proxyUrl);
+                const data = await response.json();
                 
-                if (!res.ok) {
-                    console.warn(`TopBanner: Fuente saltada (${res.status}) -> ${url}`);
-                    return [];
-                }
-                
-                const data = await res.json();
-                
-                if (data && data.status === 'ok' && data.items) {
-                    return data.items.map(item => ({
-                        title: item.title,
-                        customSourceName: this.identifySource(url)
-                    }));
-                }
-                return [];
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(data.contents, "text/xml");
+                const items = xmlDoc.querySelectorAll("item");
+                const sourceName = this.identifySource(url);
+
+                items.forEach((item, index) => {
+                    if (index < 10) { // Reducimos a 10 por fuente para no saturar memoria
+                        const title = item.querySelector("title").textContent;
+                        results.push({
+                            title: title.replace(/<!\[CDATA\[|\]\]>/g, '').trim().toUpperCase(),
+                            source: sourceName
+                        });
+                    }
+                });
             } catch (e) {
-                return [];
+                console.error("Error en fuente:", url);
             }
-        });
-
-        const results = await Promise.all(fetchPromises);
-        
-        // Filtramos resultados nulos y aplanamos el array
-        this.allNews = results.flat().filter(item => item && item.title);
-
-        if (this.allNews.length > 0) {
-            this.shuffleNews();
-            this.currentIndex = 0;
-            this.updateState("OK");
-            this.render();
-        } else {
-            this.updateState("REINTENTO");
-            // Si todo falla, al menos dejamos un mensaje que no sea "Cargando..."
-            document.getElementById('news-text').innerText = "ACTUALIZANDO TITULARES...";
         }
-        
-        this.isLoading = false;
+
+        if (results.length > 0) {
+            this.allNews = results;
+            this.shuffle();
+            this.updateState("OK");
+            this.render(); // Renderiza la primera noticia inmediatamente
+        } else {
+            this.updateState("ERROR");
+        }
     },
 
     identifySource(url) {
@@ -120,41 +96,37 @@ const TopBanner = {
         return "NOTICIAS";
     },
 
-    shuffleNews() {
-        for (let i = this.allNews.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [this.allNews[i], this.allNews[j]] = [this.allNews[j], this.allNews[i]];
-        }
+    shuffle() {
+        this.allNews.sort(() => Math.random() - 0.5);
     },
 
     rotate() {
-        if (this.allNews.length === 0) return;
-        this.currentIndex = (this.currentIndex + 1) % this.allNews.length;
-        if (this.currentIndex === 0) this.shuffleNews(); // Re-mezclar al dar la vuelta
-        this.render();
+        if (this.allNews.length > 0) {
+            this.currentIndex = (this.currentIndex + 1) % this.allNews.length;
+            this.render();
+        }
     },
 
     render() {
         const textEl = document.getElementById('news-text');
         const sourceEl = document.getElementById('source-name');
-        const item = this.allNews[this.currentIndex];
+        const current = this.allNews[this.currentIndex];
 
-        if (!textEl || !sourceEl || !item) return;
-
-        textEl.style.opacity = 0;
-        sourceEl.style.opacity = 0;
-
-        setTimeout(() => {
-            sourceEl.innerText = item.customSourceName;
-            textEl.innerText = item.title.toUpperCase();
-            textEl.style.opacity = 1;
-            sourceEl.style.opacity = 1;
-        }, 300);
+        if (textEl && sourceEl && current) {
+            // Animación suave de salida
+            textEl.style.opacity = 0;
+            setTimeout(() => {
+                sourceEl.innerText = current.source;
+                textEl.innerText = current.title;
+                // Animación suave de entrada
+                textEl.style.opacity = 1;
+            }, 500);
+        }
     },
 
     updateState(msg) {
         const el = document.getElementById('demo-state');
-        if (el) el.innerText = msg.toUpperCase();
+        if (el) el.innerText = msg;
     }
 };
 

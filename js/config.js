@@ -2,7 +2,7 @@ const CONFIG = {
     isDemo: false,           
     rutaFotos: "./fotos/",
     tiempos: {
-        foto: 10000,        
+        foto: 15000,        
         ciudad: 30000,      
         climaAPI: 300000,
         // TIEMPO DE CADA EFECTO EN LA DEMO (ms)
