@@ -4,19 +4,33 @@ const Gallery = {
     photoTimer: null,
 
     async init() {
+        console.log("Gallery: Inicializando OSD y Fondo...");
         this.container = document.getElementById('bg-container');
         if (!this.container) return;
 
+        // 1. Cargar lista de archivos
         if (typeof LISTADO_GALERIA !== 'undefined' && LISTADO_GALERIA.length > 0) {
             CONFIG.files = LISTADO_GALERIA.filter(f => f.includes('.') && !f.includes('*'));
-            CONFIG.files.sort(() => Math.random() - 0.5);
-            console.log("Gallery: Listado cargado.");
+            CONFIG.files.sort(() => Math.random() - 0.5); // Mezcla aleatoria
         } else {
             console.error("Gallery: LISTADO_GALERIA no encontrada.");
             return;
         }
 
+        // 2. Iniciar procesos
+        this.updateIP();
         this.updateBackground();
+    },
+
+    async updateIP() {
+        try {
+            const res = await fetch('https://api.ipify.org?format=json');
+            const data = await res.json();
+            const ipEl = document.getElementById('ip-address');
+            if (ipEl) ipEl.innerText = data.ip;
+        } catch (e) {
+            console.log("Error obteniendo IP, modo local activo.");
+        }
     },
 
     updateBackground() {
@@ -27,51 +41,39 @@ const Gallery = {
         const path = (CONFIG.rutaFotos || "./fotos/") + currentFile;
         const isVideo = currentFile.toLowerCase().endsWith('.mp4');
         
+        // Limpiar y crear elemento
         this.container.innerHTML = ''; 
-
         let mediaElement = isVideo ? document.createElement('video') : document.createElement('img');
+        
+        mediaElement.id = 'bg-main'; // Aplicamos tu ID de CSS
         mediaElement.src = path;
-        mediaElement.id = 'bg-main';
 
-        // --- ESTILOS BASE ---
-        Object.assign(mediaElement.style, {
-            width: "100%",
-            height: "100%",
-            position: "absolute",
-            top: "0",
-            left: "0",
-            backgroundColor: "black",
-            opacity: "0", // Empezamos invisibles para el fade-in
-            transition: "opacity 1s ease-in-out"
-        });
-
-        // --- LÓGICA DE AJUSTE SEGÚN ORIENTACIÓN ---
         if (isVideo) {
-            mediaElement.style.objectFit = "contain"; // Los vídeos mejor enteros
             Object.assign(mediaElement, { autoplay: true, muted: true, playsInline: true });
             mediaElement.onended = () => this.advanceIndexAndLoad();
         } else {
-
             mediaElement.onload = () => {
-                mediaElement.style.objectFit = "contain";
-                mediaElement.style.backgroundColor = "black";
-
-                mediaElement.style.opacity = "1"; 
+                const tiempo = (typeof CONFIG !== 'undefined' && CONFIG.tiempos) ? CONFIG.tiempos.foto : 15000;
+                this.photoTimer = setTimeout(() => this.advanceIndexAndLoad(), tiempo);
             };
-
-            // RE-ACTIVAR TEMPORIZADOR (Esto faltaba)
-            const tiempo = CONFIG.tiempos?.foto || 15000;
-            this.photoTimer = setTimeout(() => this.advanceIndexAndLoad(), tiempo);
         }
         
         this.container.appendChild(mediaElement);
 
-        // OSD
+        // ACTUALIZAR RECUADRO DE INFO (OSD)
         const countEl = document.getElementById('gallery-count');
         const nameEl = document.getElementById('file-name');
-        if (countEl) countEl.innerText = `${this.currentIndex + 1} / ${CONFIG.files.length}`;
+
+        if (countEl) {
+            countEl.innerText = `${this.currentIndex + 1} / ${CONFIG.files.length}`;
+        }
         if (nameEl) {
-            nameEl.innerText = currentFile.split('.')[0].replace(/_/g, ' ').replace('foto ', '').toUpperCase();
+            // Limpiamos el nombre: quitamos extensión, guiones y "foto"
+            let cleanName = currentFile.split('.')[0]
+                                      .replace(/_/g, ' ')
+                                      .replace(/-/g, ' ')
+                                      .replace('foto', '');
+            nameEl.innerText = cleanName.trim().toUpperCase();
         }
     },
 

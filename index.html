@@ -45,16 +45,19 @@
 
     <div class="footer-bar"></div>
 
-    <script src="./fotos/galeria.js"></script>
+   <!-- 1. CONFIGURACIÓN Y DATOS BASE -->
     <script src="./js/config.js"></script>
-    <script src="./js/gallery.js"></script>
+    <script src="./fotos/galeria.js"></script>
 
+    <!-- 2. LÓGICA DE COMPONENTES (Cargar antes de MainContent) -->
+    <script src="js/forecast.js"></script> <!-- IMPORTANTE: Añade esta línea si el archivo existe -->
     <script src="js/top_banner.js"></script>
     <script src="js/bottom_banner.js"></script>
-    <script src="js/main_content.js"></script>
-
+    <script src="js/gallery.js"></script>
+    <script src="js/network.js"></script>
+    
+    <!-- 3. EFECTOS (Necesarios para que MainContent no de error al llamar a setEffect) -->
     <script src="js/effects/particles.js"></script>
-
     <script src="js/effects/sun.js"></script>
     <script src="js/effects/storm.js"></script>
     <script src="js/effects/clouds.js"></script>
@@ -64,31 +67,35 @@
     <script src="js/effects/night.js"></script>
     <script src="js/effects/snow.js"></script>
     <script src="js/effects/fog.js"></script>
-
     <script src="js/weather_effects.js"></script>
 
-    <script src="js/network.js"></script>
-
+    <!-- 4. LÓGICA PRINCIPAL (Al final de los componentes) -->
+    <script src="js/main_content.js"></script>
+    
+    <!-- 5. CARGADORES DE MEDIA -->
     <script src="js/playlist.js"></script>
     <script src="js/media_loader.js"></script>
 
+    <!-- 6. INICIALIZADOR ÚNICO -->
     <script>
-        function updateClock() {
-            const d = new Date();
-            document.getElementById('time').innerText = d.toLocaleTimeString('es-ES', {hour:'2-digit', minute:'2-digit'});
-            document.getElementById('date').innerText = d.toLocaleDateString('es-ES', {weekday:'long', day:'numeric', month:'long'});
-        }
-
         window.onload = () => {
-            updateClock();
-            setInterval(updateClock, 1000);
+            console.log("Iniciando Sistema...");
             
-            TopBanner.init();
-            BottomBanner.init();
-            MainContent.init();
-            WeatherEffects.init('weather-canvas');
-            Gallery.init();
+            // Iniciamos los efectos primero
+            if(typeof WeatherEffects !== 'undefined') {
+                WeatherEffects.init('weather-canvas');
+            }
+
+            // MainContent ya lleva dentro el reloj y la carga de datos
+            if(typeof MainContent !== 'undefined') {
+                MainContent.init();
+            }
+
+            // Otros módulos
+            if(typeof Gallery !== 'undefined') Gallery.init();
+            if(typeof BottomBanner !== 'undefined') BottomBanner.init();
         };
     </script>
+    
 </body>
 </html>
