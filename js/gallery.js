@@ -53,14 +53,16 @@ const Gallery = {
         } else {
             // Cuando la imagen carga, decidimos cómo ajustarla
             mediaElement.onload = () => {
-                const esVertical = mediaElement.naturalHeight > mediaElement.naturalWidth;
+                // OPCIÓN A: No cortar NADA nunca (aparecerán bandas negras si la proporción no es exacta)
+                mediaElement.style.objectFit = "contain";
+                mediaElement.style.backgroundColor = "black";
                 
-                if (esVertical) {
-                    mediaElement.style.objectFit = "contain"; // Vertical: Ver entera
-                } else {
-                    mediaElement.style.objectFit = "cover";   // Horizontal: Llenar pantalla
-                }
-                mediaElement.style.opacity = "1"; // Mostrar cuando esté lista
+                /* 
+                // OPCIÓN B: Solo usar 'cover' si la diferencia es mínima (ej: fotos casi panorámicas)
+                // Si prefieres esta, dímelo y te paso el cálculo.
+                */
+
+                mediaElement.style.opacity = "1"; 
             };
 
             // RE-ACTIVAR TEMPORIZADOR (Esto faltaba)
