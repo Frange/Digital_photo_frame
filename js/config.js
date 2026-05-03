@@ -1,6 +1,6 @@
 const CONFIG = {
     isDemo: false,
-    mostrarEfectos: true,           
+    mostrarEfectos: false,           
     rutaFotos: "./fotos/",
     tiempos: {
         foto: 20000,        
@@ -12,18 +12,23 @@ const CONFIG = {
 
     // PARÁMETROS DE EFECTOS
    efectos: {
+        // SOL
+        solBrilloNucleo: 8.0,      // Multiplicador de brillo central (0.0 a 1.0)
+        solBrilloHalos: 0.010,      // Brillo de los halos circulares
+        solRotacionVelocidad: 0.0000012, 
+        solEscalaFuga: 8,          // Qué tanto se estira el destello (vapor)
+
         // NUBES
-        nubesCantidad: 170,
+        nubesCantidad: 30,
         nubesTransparencia: 0.09,
-        nubesVelocidadIzquierda: 0.4,
-        nubesVelocidadDerecha: 0.66,
+        nubesVelocidadIzquierda: 0.99,
+        nubesVelocidadDerecha: 0.99,
         nubesAlturaLimite: 0.30,
 
-        // SOL
-        solBrilloNucleo: 4.0,      // Multiplicador de brillo central (0.0 a 1.0)
-        solBrilloHalos: 0.080,      // Brillo de los halos circulares
-        solRotacionVelocidad: 0.000012, 
-        solEscalaFuga: 8,          // Qué tanto se estira el destello (vapor)
+        // LLUVIA
+        lluviaCantidad: 250,
+        lluviaVelocidad: 25,
+
 
         // NOCHE
         nocheOscuridad: 1.0,       // 1.0 = Negro puro arriba
@@ -33,10 +38,6 @@ const CONFIG = {
         estrellasFugacesFrecuencia: 0.0002, // Probabilidad por frame (~3-5 cada 5 min)
         nocheTransparencia: 0.9,    // Opacidad de la transición media (0.0 a 1.0)
         nocheAlturaLimite: 0.40,    // Hasta dónde bajan las estrellas (0.65 = 65% de la pantalla)
-
-        // LLUVIA
-        lluviaCantidad: 550,
-        lluviaVelocidad: 25,
 
         // GRANIZO
         granizoCantidad: 30,
@@ -55,16 +56,31 @@ const CONFIG = {
 
         // TORMENTA
         tormentaFrecuencia: 0.982,
-        tormentaRayoFrecuencia: 0.015,      // Probabilidad de rayo dibujado por frame
-        tormentaRelampagoFrecuencia: 0.02,  // Probabilidad de flash de fondo por frame
-        tormentaVelocidadDesvanecimiento: 0.03, // Menos de 0.05 es más lento/suave
+        tormentaRayoFrecuencia: 0.025,      // Probabilidad de rayo dibujado por frame
+        tormentaRelampagoFrecuencia: 0.03,  // Probabilidad de flash de fondo por frame
+        tormentaVelocidadDesvanecimiento: 0.02, // Menos de 0.05 es más lento/suave
     },
 
     // Orden de los efectos en la demo
     demoModos: [
 
         'Día: Sol', 
-        'Noche: Limpio', 
+        'Día: Sol con nubes', 
+        'Día: Lluvia', 
+        'Día: Llovizna', 
+        'Día: Nubes', 
+
+        'Noche: Granizo', 
+        'Día: Niebla', 
+        'Día: Nieve', 
+        'Día: Niebla', 
+        'Día: Tormenta y Lluvia', 
+        
+        'Día: Tormenta', 
+        'Día: Granizo', 
+        'Día: Viento fuerte',
+
+'Noche: Limpio', 
         'Noche: Nubes', 
         'Noche: Lluvia', 
         'Noche: Llovizna', 
@@ -73,20 +89,6 @@ const CONFIG = {
         'Noche: Niebla', 
         'Noche: Nieve',
         'Noche: Niebla', 
-
-        'Noche: Granizo', 
-        'Día: Niebla', 
-        'Día: Nieve', 
-        'Día: Niebla', 
-        'Día: Tormenta y Lluvia', 
-        'Día: Lluvia', 
-        'Día: Llovizna', 
-        'Día: Nubes', 
-        'Día: Sol con nubes', 
-        'Día: Tormenta', 
-        'Día: Granizo', 
-        'Día: Viento fuerte',
-
 
     ],
     ciudades: [

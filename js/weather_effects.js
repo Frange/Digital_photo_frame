@@ -118,57 +118,50 @@ const WeatherEffects = {
         }
     },
 
-    animate() {
-        // Bloqueo total del bucle de animación si se desactivan los efectos
+    
+    lastTime: 0, // Añade esto arriba en el objeto si quieres, o déjalo así
+    animate(currentTime) {
         if (typeof CONFIG !== 'undefined' && CONFIG.mostrarEfectos === false) {
             if (this.ctx) this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
             cancelAnimationFrame(this.animationFrameId);
             return;
         }
 
-        this.animationFrameId = requestAnimationFrame(() => {
-            const w = this.canvas.width;
-            const h = this.canvas.height;
-            this.ctx.clearRect(0, 0, w, h);
-            const low = this.currentMode.toLowerCase();
-            const cfg = CONFIG.efectos;
+        this.animationFrameId = requestAnimationFrame((time) => this.animate(time));
 
-            // Dibujar fondo nocturno
-            if (this.isNight) {
-                const hLimite = cfg.nocheAlturaLimite || 0.65;
-                const grad = this.ctx.createLinearGradient(0, 0, 0, h * hLimite);
-                grad.addColorStop(0, `rgba(0, 2, 10, ${cfg.nocheOscuridad || 0.99})`);
-                grad.addColorStop(0.5, `rgba(5, 10, 30, ${cfg.nocheTransparencia || 0.8})`);
-                grad.addColorStop(1, "rgba(0, 0, 0, 0)");
-                this.ctx.fillStyle = grad;
-                this.ctx.fillRect(0, 0, w, h);
+        // --- LIMITADOR A 30 FPS ---
+        const delta = currentTime - this.lastTime;
+        if (delta < 32) return; // Si no han pasado 32ms, saltamos el frame
+        this.lastTime = currentTime;
 
-                if (typeof NightEffect !== 'undefined') {
-                    NightEffect.handleShootingStar(this.ctx, w, h);
-                }
-            }
+        const w = this.canvas.width;
+        const h = this.canvas.height;
+        this.ctx.clearRect(0, 0, w, h);
+        
+        const low = this.currentMode.toLowerCase();
+        const cfg = CONFIG.efectos;
 
-            // Efecto Sol
-            if ((low.includes('sol') || low.includes('despejado')) && !this.isNight) {
-                if (typeof SunEffect !== 'undefined') SunEffect.draw(this.ctx, w, h);
-            }
+        // ... El resto del código de dibujo se queda igual ...
+        if (this.isNight) {
+            // Fondo nocturno... (aquí podrías optimizar quitando el gradiente lineal si sigue lento)
+            const hLimite = cfg.nocheAlturaLimite || 0.65;
+            this.ctx.fillStyle = `rgba(0, 5, 20, ${cfg.nocheOscuridad || 0.8})`;
+            this.ctx.fillRect(0, 0, w, h * hLimite); 
+        }
 
-            // Efecto Tormenta
-            if (low.includes('tormenta') && typeof StormEffect !== 'undefined') {
-                StormEffect.draw(this.ctx, w, h);
-            }
-            
-            // Efecto Nieve (Muñeco u otros)
-            if (low.includes('nieve') && typeof SnowmanEffect !== 'undefined') {
-                SnowmanEffect.draw(this.ctx, w, h);
-            }
+        if ((low.includes('sol') || low.includes('despejado')) && !this.isNight) {
+            if (typeof SunEffect !== 'undefined') SunEffect.draw(this.ctx, w, h);
+        }
 
-            // Partículas
-            this.particles.forEach(p => p.draw(this.ctx));
-            
-            // Continuar bucle
-            this.animate();
-        });
+        if (low.includes('tormenta') && typeof StormEffect !== 'undefined') {
+            StormEffect.draw(this.ctx, w, h);
+        }
+        
+        if (low.includes('nieve') && typeof SnowmanEffect !== 'undefined') {
+            SnowmanEffect.draw(this.ctx, w, h);
+        }
+
+        this.particles.forEach(p => p.draw(this.ctx));
     }
 };
 
