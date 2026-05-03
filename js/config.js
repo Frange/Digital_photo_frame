@@ -2,17 +2,17 @@ const CONFIG = {
     isDemo: false,           
     rutaFotos: "./fotos/",
     tiempos: {
-        foto: 15000,        
+        foto: 3000,        
         ciudad: 30000,      
         climaAPI: 300000,
-        // TIEMPO DE CADA EFECTO EN LA DEMO (ms)
+        noticias: 20000,
         demoEfecto: 20000   // Cada efecto durará 12 segundos
     },
 
     // PARÁMETROS DE EFECTOS
    efectos: {
         // NUBES
-        nubesCantidad: 100,
+        nubesCantidad: 170,
         nubesTransparencia: 0.09,
         nubesVelocidadIzquierda: 0.4,
         nubesVelocidadDerecha: 0.66,
@@ -91,9 +91,6 @@ const CONFIG = {
     ciudades: [
         { nombre: "Cabanillas del Campo", query: "Cabanillas+del+Campo" },
         { nombre: "Torrevieja", query: "Torrevieja" }
-    ],
-    files: [
-        'foto_0000001.jpg',
     ],
     debugMode: true
 };

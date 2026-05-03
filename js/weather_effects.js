@@ -108,40 +108,42 @@ const WeatherEffects = {
     },
 
     animate() {
-        const w = this.canvas.width;
-        const h = this.canvas.height;
-        this.ctx.clearRect(0, 0, w, h);
-        const low = this.currentMode.toLowerCase();
-        const cfg = CONFIG.efectos;
+        setTimeout(() => {
+            const w = this.canvas.width;
+            const h = this.canvas.height;
+            this.ctx.clearRect(0, 0, w, h);
+            const low = this.currentMode.toLowerCase();
+            const cfg = CONFIG.efectos;
 
-        if (this.isNight) {
-            const hLimite = cfg.nocheAlturaLimite || 0.65;
-            const grad = this.ctx.createLinearGradient(0, 0, 0, h * hLimite);
-            grad.addColorStop(0, `rgba(0, 2, 10, ${cfg.nocheOscuridad || 0.99})`);
-            grad.addColorStop(0.5, `rgba(5, 10, 30, ${cfg.nocheTransparencia || 0.8})`);
-            grad.addColorStop(1, "rgba(0, 0, 0, 0)");
-            this.ctx.fillStyle = grad;
-            this.ctx.fillRect(0, 0, w, h);
+            if (this.isNight) {
+                const hLimite = cfg.nocheAlturaLimite || 0.65;
+                const grad = this.ctx.createLinearGradient(0, 0, 0, h * hLimite);
+                grad.addColorStop(0, `rgba(0, 2, 10, ${cfg.nocheOscuridad || 0.99})`);
+                grad.addColorStop(0.5, `rgba(5, 10, 30, ${cfg.nocheTransparencia || 0.8})`);
+                grad.addColorStop(1, "rgba(0, 0, 0, 0)");
+                this.ctx.fillStyle = grad;
+                this.ctx.fillRect(0, 0, w, h);
 
-            if (typeof NightEffect !== 'undefined') {
-                NightEffect.handleShootingStar(this.ctx, w, h);
+                if (typeof NightEffect !== 'undefined') {
+                    NightEffect.handleShootingStar(this.ctx, w, h);
+                }
             }
-        }
 
-        if ((low.includes('sol') || low.includes('despejado')) && !this.isNight) {
-            if (typeof SunEffect !== 'undefined') SunEffect.draw(this.ctx, w, h);
-        }
+            if ((low.includes('sol') || low.includes('despejado')) && !this.isNight) {
+                if (typeof SunEffect !== 'undefined') SunEffect.draw(this.ctx, w, h);
+            }
 
-        if (low.includes('tormenta') && typeof StormEffect !== 'undefined') {
-            StormEffect.draw(this.ctx, w, h);
-        }
-        
-        if (low.includes('nieve') && typeof SnowmanEffect !== 'undefined') {
-            SnowmanEffect.draw(this.ctx, w, h);
-        }
+            if (low.includes('tormenta') && typeof StormEffect !== 'undefined') {
+                StormEffect.draw(this.ctx, w, h);
+            }
+            
+            if (low.includes('nieve') && typeof SnowmanEffect !== 'undefined') {
+                SnowmanEffect.draw(this.ctx, w, h);
+            }
 
-        this.particles.forEach(p => p.draw(this.ctx));
-        requestAnimationFrame(() => this.animate());
+            this.particles.forEach(p => p.draw(this.ctx));
+            requestAnimationFrame(() => this.animate());
+        }, 10); // 33ms es aprox 30 FPS
     }
 };
 

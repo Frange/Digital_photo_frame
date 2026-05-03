@@ -179,3 +179,50 @@ body, html { height: 100%; width: 100%; background: #000; color: white; font-fam
     align-items: center;
 }
 #flash-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; opacity: 0; pointer-events: none; z-index: 999; transition: opacity 0.05s ease-out; }
+/* Caja de información estilo Glass-Box (Abajo a la derecha) */
+#gallery-info-box {
+    position: absolute;
+    bottom: 65px; 
+    right: 20px;
+    padding: 15px;
+    min-width: 180px;
+    text-align: right; /* Alineación base */
+    z-index: 100;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end; /* Alinea los hijos al final (derecha) */
+}
+
+/* Fila de la IP */
+#gallery-info-box .ip-row {
+    font-weight: bold;
+    font-size: 0.9em;
+    margin-bottom: 2px;
+    width: 100%; /* Ocupa todo el ancho para que text-align funcione */
+    text-align: right;
+}
+
+/* Fila del Contador corregida */
+#gallery-info-box .count-row {
+    font-size: 1.6em; /* Un poco más grande para que se vea mejor */
+    font-weight: bold;
+    color: #ffffff; 
+    margin: 0;
+    padding: 0;
+    background: none;
+    width: 100%; /* Forzamos que use todo el ancho de la caja */
+    text-align: right; /* Alineamos el texto dentro de ese ancho */
+    display: block;
+}
+
+/* Fila del Nombre */
+#gallery-info-box .name-row {
+    font-size: 0.8em;
+    color: rgba(255, 255, 255, 0.6);
+    text-transform: uppercase;
+    margin-top: 4px;
+    letter-spacing: 0.5px;
+    width: 100%;
+    text-align: right;
+}
