@@ -5,8 +5,15 @@ const WeatherEffects = {
     demoIdx: 0, 
     currentMode: '', 
     isNight: false,
+    animationFrameId: null, // Para poder detener la animación limpiamente
 
     init(canvasId) {
+        // --- INTERRUPTOR DE SEGURIDAD ---
+        if (typeof CONFIG !== 'undefined' && CONFIG.mostrarEfectos === false) {
+            console.log("WeatherEffects: Desactivados por CONFIG para ahorrar recursos.");
+            return;
+        }
+
         this.canvas = document.getElementById(canvasId);
         if (!this.canvas) return; 
         
@@ -20,18 +27,24 @@ const WeatherEffects = {
         if (typeof CONFIG !== 'undefined' && CONFIG.isDemo) {
             console.log("Modo DEMO activo");
             setInterval(() => {
-                this.demoIdx = (this.demoIdx + 1) % CONFIG.demoModos.length;
-                this.setEffect(CONFIG.demoModos[this.demoIdx]);
+                // Solo avanzamos si los efectos siguen activos
+                if (CONFIG.mostrarEfectos !== false) {
+                    this.demoIdx = (this.demoIdx + 1) % CONFIG.demoModos.length;
+                    this.setEffect(CONFIG.demoModos[this.demoIdx]);
+                }
             }, CONFIG.tiempos.demoEfecto);
         }
     },
 
     resize() {
+        if (!this.canvas) return;
         this.canvas.width = window.innerWidth;
         this.canvas.height = window.innerHeight;
     },
 
     setEffect(m) {
+        // Bloqueo si los efectos están desactivados
+        if (typeof CONFIG !== 'undefined' && CONFIG.mostrarEfectos === false) return;
         if (!m || this.currentMode === m) return;
 
         console.log("Canvas recibiendo nuevo efecto:", m);
@@ -66,9 +79,8 @@ const WeatherEffects = {
             }
         }
         
-        // --- 4. GESTIÓN DE LLUVIA / LLOVIZNA (EXCLUYENTE) ---
+        // 4. Lluvia / Llovizna
         if (low.includes('llovizna')) {
-            // Caso Llovizna: 20 partículas lentas y finas
             const cant = (typeof LittleRain !== 'undefined') ? LittleRain.params.cantidad : 20; 
             for (let i = 0; i < cant; i++) {
                 const p = new Particle('rain', this.canvas); 
@@ -79,7 +91,6 @@ const WeatherEffects = {
             }
         } 
         else if (low.includes('lluvia') || low.includes('chubasco')) {
-            // Caso Lluvia Normal: 550 partículas rápidas
             for (let i = 0; i < (cfg.lluviaCantidad || 550); i++) {
                 this.particles.push(new Particle('rain', this.canvas));
             }
@@ -108,13 +119,21 @@ const WeatherEffects = {
     },
 
     animate() {
-        setTimeout(() => {
+        // Bloqueo total del bucle de animación si se desactivan los efectos
+        if (typeof CONFIG !== 'undefined' && CONFIG.mostrarEfectos === false) {
+            if (this.ctx) this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            cancelAnimationFrame(this.animationFrameId);
+            return;
+        }
+
+        this.animationFrameId = requestAnimationFrame(() => {
             const w = this.canvas.width;
             const h = this.canvas.height;
             this.ctx.clearRect(0, 0, w, h);
             const low = this.currentMode.toLowerCase();
             const cfg = CONFIG.efectos;
 
+            // Dibujar fondo nocturno
             if (this.isNight) {
                 const hLimite = cfg.nocheAlturaLimite || 0.65;
                 const grad = this.ctx.createLinearGradient(0, 0, 0, h * hLimite);
@@ -129,21 +148,27 @@ const WeatherEffects = {
                 }
             }
 
+            // Efecto Sol
             if ((low.includes('sol') || low.includes('despejado')) && !this.isNight) {
                 if (typeof SunEffect !== 'undefined') SunEffect.draw(this.ctx, w, h);
             }
 
+            // Efecto Tormenta
             if (low.includes('tormenta') && typeof StormEffect !== 'undefined') {
                 StormEffect.draw(this.ctx, w, h);
             }
             
+            // Efecto Nieve (Muñeco u otros)
             if (low.includes('nieve') && typeof SnowmanEffect !== 'undefined') {
                 SnowmanEffect.draw(this.ctx, w, h);
             }
 
+            // Partículas
             this.particles.forEach(p => p.draw(this.ctx));
-            requestAnimationFrame(() => this.animate());
-        }, 10); // 33ms es aprox 30 FPS
+            
+            // Continuar bucle
+            this.animate();
+        });
     }
 };
 

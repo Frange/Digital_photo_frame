@@ -51,16 +51,10 @@ const Gallery = {
             Object.assign(mediaElement, { autoplay: true, muted: true, playsInline: true });
             mediaElement.onended = () => this.advanceIndexAndLoad();
         } else {
-            // Cuando la imagen carga, decidimos cómo ajustarla
+
             mediaElement.onload = () => {
-                // OPCIÓN A: No cortar NADA nunca (aparecerán bandas negras si la proporción no es exacta)
                 mediaElement.style.objectFit = "contain";
                 mediaElement.style.backgroundColor = "black";
-                
-                /* 
-                // OPCIÓN B: Solo usar 'cover' si la diferencia es mínima (ej: fotos casi panorámicas)
-                // Si prefieres esta, dímelo y te paso el cálculo.
-                */
 
                 mediaElement.style.opacity = "1"; 
             };

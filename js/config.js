@@ -1,8 +1,9 @@
 const CONFIG = {
-    isDemo: false,           
+    isDemo: false,
+    mostrarEfectos: true,           
     rutaFotos: "./fotos/",
     tiempos: {
-        foto: 3000,        
+        foto: 20000,        
         ciudad: 30000,      
         climaAPI: 300000,
         noticias: 20000,
