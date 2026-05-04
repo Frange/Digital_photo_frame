@@ -71,7 +71,7 @@ const MainContent = {
         const data = esCabanillas ? this.climaCabanillas : this.climaTorrevieja;
         
         const label = document.querySelector('.loc-label');
-        if (label) label.innerText = esCabanillas ? "CABANILLAS" : "TORREVIEJA";
+        if (label) label.innerText = esCabanillas ? "CABANILLAS DEL CAMPO" : "TORREVIEJA";
 
         const box = document.getElementById('forecast-box');
         if (box && typeof ForecastLogic !== 'undefined') {

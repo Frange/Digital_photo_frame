@@ -3,7 +3,7 @@ const CONFIG = {
     mostrarEfectos: false,           
     rutaFotos: "./fotos/",
     showTopBanner: false,    // Cambia a false para ocultar noticias
-    showBottomBanner: false,  // Cambia a false para ocultar avisos
+    showBottomBanner: true,  // Cambia a false para ocultar avisos
     tiempos: {
         foto: 20000,        
         ciudad: 30000,      
