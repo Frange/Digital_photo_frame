@@ -79,6 +79,35 @@ body, html {
     border: 1px solid rgba(255,255,255,0.1); 
     padding: 20px; }
 
+/* ESPECÍFICO PARA EL RELOJ */
+.box-reloj {
+    width: 480px; /* Aquí ajustas el ancho exacto del reloj */
+    height: 200px; /* Mantienes tu altura fija */
+    background: rgba(0, 0, 0, 0.4);
+    padding: 30px;
+    border-left: 5px solid #ffcc00;
+}
+
+/* ESPECÍFICO PARA EL CLIMA */
+.box-clima {
+    width: fit-content; /* Se ajusta al contenido */
+    height: auto; 
+    background: rgba(15, 15, 15, 0.85);
+    padding: 25px; 
+    box-shadow: 0 10px 50px rgba(0,0,0,0.5);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end; /* Alinea todo a la derecha dentro de la caja */
+}
+
+/* Contenedor del Clima */
+.weather-now {
+    text-align: right; 
+    min-width: 0 !important; /* Eliminado el 550px que forzaba el ancho */
+    width: fit-content;
+    margin-left: auto; /* Empuja la caja hacia la derecha */
+}
+
 /* Contenedor que alinea Reloj (izq) y Clima (der) */
 .header { 
     position: absolute; 
@@ -87,7 +116,7 @@ body, html {
     padding: 0 20px; 
     display: flex; 
     justify-content: space-between; 
-    align-items: stretch; 
+    align-items: flex-start; 
     z-index: 100; 
 }
 
@@ -113,7 +142,6 @@ body, html {
 }
 
 /* Bloque de Temperatura Actual e Icono */
-.weather-now { text-align: right; min-width: 450px; }
 .temp-row { display: flex; align-items: center; justify-content: flex-end; }
 
 /* Forzado de color amarillo para iconos de sol/clima */
@@ -133,19 +161,11 @@ body, html {
     display: inline-block;
 }
 
-.f-icon { 
-    font-size: 4rem; 
-    display: block; 
-    margin: 0 auto; /* Centrado perfecto sin márgenes laterales */
-    color: #ffcc00 !important; 
-}
-
 /* Texto del estado (Ej: DESPEJADO, LLUVIA DÉBIL) */
 #weather-status { 
     color: #ffffff; 
     font-weight: 800; 
-    text-transform: 
-    uppercase; 
+    text-transform: uppercase; 
     margin-top: 20px; 
     font-size: 2.0rem; 
 }
@@ -198,8 +218,8 @@ body, html {
     font-weight: 900; display: block; margin-bottom: 10px; 
 } 
 
-.f-icon { font-size: 5rem; display: block; } /* Icono pequeño del día */
-.f-temp { font-style: normal; font-size: 1.8rem; font-weight: bold; display: block; margin-bottom: 15px; color: #ffffff; } /* 22º / 15º */
+.f-icon { font-size: 5rem; display: block; color: #ffcc00 !important; } 
+.f-temp { font-style: normal; font-size: 1.8rem; font-weight: bold; display: block; margin-bottom: 15px; color: #ffffff; }
 
 /* ==========================================================================
    6. INFO DE GALERÍA E IP (ABAJO DERECHA)
@@ -214,9 +234,9 @@ body, html {
     text-align: right; 
 }
 
-.ip-row { color: #ffcc00; font-weight: 900; font-size: 1.1rem; margin-bottom: 5px; } /* Texto de la IP */
-.count-row { font-size: 3.5rem; font-weight: 800; line-height: 1; color: #fff; } /* Contador 5 / 90 */
-.name-row { font-size: 1.1rem; color: rgba(255,255,255,0.6); text-transform: uppercase; margin-top: 5px; } /* Nombre del archivo */
+.ip-row { color: #ffcc00; font-weight: 900; font-size: 1.1rem; margin-bottom: 5px; } 
+.count-row { font-size: 3.5rem; font-weight: 800; line-height: 1; color: #fff; } 
+.name-row { font-size: 1.1rem; color: rgba(255,255,255,0.6); text-transform: uppercase; margin-top: 5px; } 
 
 /* ==========================================================================
    7. BARRA INFERIOR (PIE DE PÁGINA)
@@ -265,10 +285,10 @@ body, html {
 #hourly-container {
     display: flex;
     justify-content: space-between;
-    margin-top: 15px; /* Un poco más de espacio arriba */
+    margin-top: 15px; 
     padding-top: 10px;
     border-top: 1px solid rgba(255,255,255,0.1);
-    width: 100%; /* Que ocupe todo el ancho de la caja */
+    width: 100%; 
 }
 
 .h-item {
@@ -294,9 +314,4 @@ body, html {
     font-size: 1.1rem;
     font-weight: 600;
     color: #fff;
-}
-
-/* Ajuste para que la caja de clima actual sea más ancha si es necesario */
-.weather-now {
-    min-width: 550px !important; /* Aumentado para que quepan las 8 horas */
 }

@@ -52,7 +52,8 @@ const MainContent = {
 
     // Nueva función para centralizar el renderizado de la parte superior (Temp, Icono y HORAS)
     renderTopWeather() {
-        const data = (this.currentIdx === 0) ? this.climaCabanillas : this.climaTorrevieja;
+        // FORZAMOS a que la parte superior SIEMPRE sea Cabanillas (climaCabanillas es data[0])
+        const data = this.climaCabanillas; 
         if (!data) return;
 
         const cur = data.current_condition[0];
@@ -72,62 +73,76 @@ const MainContent = {
             statusEl.innerHTML = `
                 <div style="display: flex; align-items: center; justify-content: flex-end; gap: 10px;">
                     ${alertaHTML}
-                    <div><span style="color: #ffcc00;">AHORA:</span> ${descFull}</div>
+                    ${descFull}
                 </div>`;
         }
 
         if (typeof setEffect === 'function') setEffect(cur.lang_es[0].value);
         
-        // 3. Pintar las horas de la ciudad seleccionada
+        // 3. Pintar las horas SIEMPRE de Cabanillas
         this.renderHourlyForecast(data);
     },
 
     renderHourlyForecast(data) {
-        // 1. Intentamos buscar el contenedor
         let container = document.getElementById('hourly-container');
         
-        // 2. Si NO existe, lo creamos por código para que no falle nunca
         if (!container) {
-            console.warn("⚠️ 'hourly-container' no estaba en el HTML. Creándolo dinámicamente...");
             container = document.createElement('div');
             container.id = 'hourly-container';
-            // Lo metemos dentro de weather-now
             const parent = document.querySelector('.weather-now');
             if (parent) parent.appendChild(container);
         }
 
-        // 3. Forzamos estilos mínimos para asegurar visibilidad (independiente del CSS)
+        // Estilos base
         container.style.display = 'flex';
         container.style.justifyContent = 'space-between';
         container.style.marginTop = '15px';
         container.style.width = '100%';
-        container.style.minHeight = '50px';
 
         try {
-            const hourlyData = data.weather[0].hourly;
-            
-            // 4. Limpiamos y pintamos
-            container.innerHTML = hourlyData.map(h => {
+            const now = new Date();
+            const currentHour = now.getHours(); // Ej: 16
+
+            // 1. Obtenemos todas las horas del día de hoy
+            let hourlyData = data.weather[0].hourly;
+
+            // 2. FILTRAMOS: Solo horas mayores a la actual
+            // Convertimos '300' a 3, '1200' a 12, etc.
+            let futureHours = hourlyData.filter(h => {
+                const hourNum = parseInt(h.time) / 100;
+                return hourNum > currentHour; 
+            });
+
+            // 3. Si queda poco del día (ej: son las 22:00), rellenamos con las del día siguiente
+            if (futureHours.length < 5) {
+                const tomorrowHours = data.weather[1].hourly;
+                futureHours = futureHours.concat(tomorrowHours).slice(0, 4); // Cogemos las próximas 8 disponibles
+            } else {
+                // Si hay suficientes, mostramos máximo 8
+                futureHours = futureHours.slice(0, 4);
+            }
+
+            // 4. Pintamos
+            container.innerHTML = futureHours.map(h => {
                 const horaRaw = parseInt(h.time);
                 const horaData = horaRaw / 100;
                 const hourText = horaData < 10 ? `0${horaData}:00` : `${horaData}:00`;
 
                 return `
                     <div class="h-item" style="display: flex; flex-direction: column; align-items: center; flex: 1;">
-                        <span class="h-time" style="font-size: 0.7rem; color: rgba(255,255,255,0.6);">${hourText}</span>
-                        <span class="h-icon" style="font-size: 1.4rem; margin: 2px 0;">${this.getIcon(h.lang_es[0].value.toLowerCase())}</span>
-                        <span class="h-temp" style="font-size: 0.9rem; font-weight: bold; color: white;">${h.tempC}º</span>
+                        <span class="h-time" style="font-size: 0.75rem; color: #ffcc00; font-weight: bold;">${hourText}</span>
+                        <span class="h-icon" style="font-size: 1.5rem; margin: 4px 0;">${this.getIcon(h.lang_es[0].value.toLowerCase())}</span>
+                        <span class="h-temp" style="font-size: 1rem; font-weight: bold; color: white;">${h.tempC}º</span>
                     </div>
                 `;
             }).join('');
-            
-            console.log("🚀 Horas renderizadas con éxito");
 
         } catch (e) {
             console.error("❌ Error en renderHourlyForecast:", e);
         }
     },
-    
+
+
 
     getIcon(desc) {
         if (desc.includes("tormenta")) return "⚡";
