@@ -14,16 +14,15 @@
     </div>
 
     <div id="bg-container"></div>
-    
     <canvas id="weather-canvas"></canvas>
-    <div id="flash-overlay"></div>
 
+    <!-- CABECERA: RELOJ Y CLIMA ACTUAL -->
     <div class="header">
-        <div class="time-area glass-box">
+        <div class="time-area glass-box box-reloj">
             <div id="time">00:00</div>
             <div id="date">--</div>
         </div>
-        <div class="weather-now glass-box">
+        <div class="weather-now glass-box box-clima">
             <div class="temp-row">
                 <span id="main-icon">☀️</span>
                 <span id="temp-big">--ºC</span>
@@ -32,80 +31,34 @@
         </div>
     </div>
 
+    <!-- ABAJO IZQUIERDA: PREDICCIÓN SEMANAL -->
     <div class="forecast-area">
         <div class="loc-label">CABANILLAS DEL CAMPO</div>
         <div id="forecast-box" style="display:flex;"></div>
     </div>
 
-    <div id="gallery-info-box" class="glass-box">
-        <div class="ip-row">IP: <span id="ip-address">--</span></div>
-        <div class="count-row" id="gallery-count">0 / 0</div>
-        <div class="name-row" id="file-name">--</div>
+    <!-- ABAJO DERECHA: NUEVO RECUADRO DE HORAS -->
+    <div id="hourly-box" class="glass-box">
+        <div id="hourly-container"></div>
     </div>
 
     <div class="footer-bar"></div>
 
-   <!-- 1. CONFIGURACIÓN Y DATOS BASE -->
+    <!-- SCRIPTS -->
     <script src="./js/config.js"></script>
     <script src="./fotos/galeria.js"></script>
-
-    <!-- 2. LÓGICA DE COMPONENTES (Cargar antes de MainContent) -->
-    <script src="js/forecast.js"></script> <!-- IMPORTANTE: Añade esta línea si el archivo existe -->
-    <script src="js/bottom_banner.js"></script>
+    <script src="js/forecast.js"></script>
     <script src="js/gallery.js"></script>
-    <script src="js/network.js"></script>
-    
-    <!-- 3. EFECTOS (Necesarios para que MainContent no de error al llamar a setEffect) -->
-    <script src="js/effects/particles.js"></script>
-    <script src="js/effects/sun.js"></script>
-    <script src="js/effects/storm.js"></script>
-    <script src="js/effects/clouds.js"></script>
-    <script src="js/effects/little_rain.js"></script>
-    <script src="js/effects/rain.js"></script>
-    <script src="js/effects/hail.js"></script>
-    <script src="js/effects/night.js"></script>
-    <script src="js/effects/snow.js"></script>
-    <script src="js/effects/fog.js"></script>
     <script src="js/weather_effects.js"></script>
-
-    <!-- 4. LÓGICA PRINCIPAL (Al final de los componentes) -->
     <script src="js/main_content.js"></script>
-    
-    <!-- 5. CARGADORES DE MEDIA -->
-    <script src="js/playlist.js"></script>
     <script src="js/media_loader.js"></script>
 
-    <!-- 6. INICIALIZADOR ÚNICO -->
     <script>
         window.onload = () => {
-            console.log("Iniciando Sistema...");
-            
-            // Iniciamos los efectos primero
-            if(typeof WeatherEffects !== 'undefined') {
-                WeatherEffects.init('weather-canvas');
-            }
-
-            // MainContent ya lleva dentro el reloj y la carga de datos
-            if(typeof MainContent !== 'undefined') {
-                MainContent.init();
-            }
-
-            // Lógica de visibilidad de Banners
-            const topBar = document.querySelector('.news-banner');
-            if (topBar && !CONFIG.showTopBanner) {
-                topBar.classList.add('hidden');
-            }
-
-            const bottomBar = document.querySelector('.footer-bar');
-            if (bottomBar && !CONFIG.showBottomBanner) {
-                bottomBar.classList.add('hidden');
-            }else{
-                if(typeof BottomBanner !== 'undefined') BottomBanner.init();
-            }
-
+            if(typeof WeatherEffects !== 'undefined') WeatherEffects.init('weather-canvas');
+            if(typeof MainContent !== 'undefined') MainContent.init();
             if(typeof Gallery !== 'undefined') Gallery.init();
         };
     </script>
-    
 </body>
 </html>
