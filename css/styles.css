@@ -134,7 +134,7 @@ body, html {
     letter-spacing: -4px; 
 }
 #date { 
-    font-size: 2rem; 
+    font-size: 2.2rem; 
     margin-top: 15px; 
     text-align: center; 
     text-transform: capitalize; 
@@ -164,10 +164,46 @@ body, html {
 /* Texto del estado (Ej: DESPEJADO, LLUVIA DÉBIL) */
 #weather-status { 
     color: #ffffff; 
-    font-weight: 800; 
+    font-weight: 700; 
     text-transform: uppercase; 
-    margin-top: 20px; 
-    font-size: 2.0rem; 
+    font-size: 2.4rem; 
+}
+
+
+/* Contenedor de horas (dentro de la caja de clima actual) */
+#hourly-container {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 15px; 
+    padding-top: 10px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    width: 100%; 
+}
+
+.h-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+}
+
+#hourly-container .h-time {
+    font-size: 2.0rem !important;
+    color: #ffcc00 !important;
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+
+#hourly-container .h-icon {
+    font-size: 5.0rem !important; /* Ajusta este número (Ej: 2.5rem es bastante más grande) */
+    margin: 8px 0 !important;
+    display: block; /* Asegura que se comporte como bloque para aceptar el tamaño */
+}
+
+#hourly-container .h-temp {
+    font-size: 2.0rem !important; /* Ajusta este número */
+    font-weight: 700;
+    color: #fff !important;
 }
 
 /* ==========================================================================
@@ -199,8 +235,7 @@ body, html {
 
 /* Cada una de las cajas de los días de la semana */
 .f-day { 
-    height: 190px;
-    width: 200px; 
+    min-width: 200px; 
     text-align: center; 
     background: rgba(15, 15, 15, 0.9); 
     padding: 10px 12px; 
@@ -213,13 +248,24 @@ body, html {
 
 /* LUNES, MARTES... */
 .f-name { 
-    font-size: 1.8rem; 
+    font-size: 2.0rem; 
     color: #ffcc00; 
     font-weight: 900; display: block; margin-bottom: 10px; 
 } 
 
-.f-icon { font-size: 5rem; display: block; color: #ffcc00 !important; } 
-.f-temp { font-style: normal; font-size: 1.8rem; font-weight: bold; display: block; margin-bottom: 15px; color: #ffffff; }
+.f-icon { 
+    font-size: 6rem; 
+    display: block; 
+    color: #ffcc00 !important; 
+} 
+.f-temp { 
+    font-style: normal; 
+    font-size: 2.0rem; 
+    font-weight: bold; 
+    display: block; 
+    margin-bottom: 15px; 
+    color: #ffffff; 
+}
 
 /* ==========================================================================
    6. INFO DE GALERÍA E IP (ABAJO DERECHA)
@@ -228,7 +274,7 @@ body, html {
     position: absolute; 
     bottom: 20px; 
     right: 20px; 
-    width: 250px; 
+
     height: 170px;
     z-index: 100; 
     text-align: right; 
@@ -279,39 +325,4 @@ body, html {
     0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.7); }
     70% { transform: scale(1.05); box-shadow: 0 0 0 15px rgba(255, 0, 0, 0); }
     100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 0, 0, 0); }
-}
-
-/* Contenedor de horas (dentro de la caja de clima actual) */
-#hourly-container {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 15px; 
-    padding-top: 10px;
-    border-top: 1px solid rgba(255,255,255,0.1);
-    width: 100%; 
-}
-
-.h-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    flex: 1;
-}
-
-.h-time {
-    font-size: 0.8rem;
-    color: #ffcc00;
-    font-weight: 700;
-    margin-bottom: 5px;
-}
-
-.h-icon {
-    font-size: 1.5rem;
-    margin: 5px 0;
-}
-
-.h-temp {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: #fff;
 }
