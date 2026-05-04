@@ -51,7 +51,6 @@
 
     <!-- 2. LÓGICA DE COMPONENTES (Cargar antes de MainContent) -->
     <script src="js/forecast.js"></script> <!-- IMPORTANTE: Añade esta línea si el archivo existe -->
-    <script src="js/top_banner.js"></script>
     <script src="js/bottom_banner.js"></script>
     <script src="js/gallery.js"></script>
     <script src="js/network.js"></script>
@@ -91,9 +90,20 @@
                 MainContent.init();
             }
 
-            // Otros módulos
+            // Lógica de visibilidad de Banners
+            const topBar = document.querySelector('.news-banner');
+            if (topBar && !CONFIG.showTopBanner) {
+                topBar.classList.add('hidden');
+            }
+
+            const bottomBar = document.querySelector('.footer-bar');
+            if (bottomBar && !CONFIG.showBottomBanner) {
+                bottomBar.classList.add('hidden');
+            }else{
+                if(typeof BottomBanner !== 'undefined') BottomBanner.init();
+            }
+
             if(typeof Gallery !== 'undefined') Gallery.init();
-            if(typeof BottomBanner !== 'undefined') BottomBanner.init();
         };
     </script>
     

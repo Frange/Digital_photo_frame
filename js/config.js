@@ -2,6 +2,8 @@ const CONFIG = {
     isDemo: false,
     mostrarEfectos: false,           
     rutaFotos: "./fotos/",
+    showTopBanner: false,    // Cambia a false para ocultar noticias
+    showBottomBanner: false,  // Cambia a false para ocultar avisos
     tiempos: {
         foto: 20000,        
         ciudad: 30000,      
