@@ -63,10 +63,41 @@ body, html {
 #total-photos { color: #888; font-weight: 700; font-size: 1.1rem; }
 
 /* ==========================================================================
-   3. CAPAS DE FONDO
+   3. CAPAS DE FONDO (CENTRADAS SIN CORTES)
    ========================================================================== */
-#bg-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; display: flex; justify-content: center; align-items: center; background: #000; }
-#bg-main { width: 100%; height: 100%; object-fit: cover; object-position: center center; opacity: 0.6; }
+#bg-container { 
+    position: fixed; 
+    top: 0; 
+    left: 0; 
+    width: 100vw; 
+    height: 100vh; 
+    z-index: 0; 
+    background: #000; /* Fondo negro para los huecos */
+
+    /* Flexbox para centrar absolutamente todo lo que haya dentro */
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    overflow: hidden;
+}
+
+#bg-main { 
+    /* Quitamos position fixed y top/left para que el centrado flex funcione */
+    position: relative; 
+    
+    /* 'contain' garantiza que la imagen se vea ENTERA. Jamás cortará una cabeza. */
+    object-fit: contain; 
+    
+    /* Le decimos que intente ser tan grande como la pantalla, 
+       pero respetando sus propias proporciones */
+    width: 100%;
+    height: 100%;
+    
+    /* Mantenemos la opacidad y la transición */
+    opacity: 1;
+    transition: opacity 0.5s ease-in-out; 
+}
+
 #weather-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; }
 
 /* ==========================================================================
@@ -227,24 +258,3 @@ body, html {
     margin-left: 20px;
 }
 
-/* ==========================================================================
-   7. PIE DE PÁGINA
-   ========================================================================== */
-.footer-bar { 
-    position: absolute; 
-    bottom: 0; 
-    width: 100%; 
-    background: #000; 
-    height: 70px; 
-    z-index: 30; 
-    border-top: 1px solid #222; 
-}
-
-.alert-badge {
-    background: #ff0000;
-    color: white;
-    padding: 5px 15px;
-    border-radius: 8px;
-    font-weight: 900;
-    font-size: 0.9rem;
-}
