@@ -66,7 +66,7 @@ body, html {
    3. CAPAS DE FONDO
    ========================================================================== */
 #bg-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; display: flex; justify-content: center; align-items: center; background: #000; }
-#bg-main { width: 110%; height: 110%; object-fit: cover; object-position: center center; opacity: 0.6; }
+#bg-main { width: 100%; height: 100%; object-fit: cover; object-position: center center; opacity: 0.6; }
 #weather-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; }
 
 /* ==========================================================================
@@ -74,17 +74,13 @@ body, html {
    ========================================================================== */
 .glass-box { 
     background: rgba(0,0,0,0.65); 
-    border-radius: 25px; 
-    backdrop-filter: blur(25px); 
-    border: 1px solid rgba(255,255,255,0.1); 
-    padding: 20px; 
+    backdrop-filter: blur(90px); 
 }
 
 .header { 
     position: absolute; 
-    top: 20px; 
     width: 100%; 
-    padding: 0 20px; 
+    padding: 0 0px; 
     display: flex; 
     justify-content: space-between; 
     align-items: flex-start; 
@@ -92,46 +88,52 @@ body, html {
 }
 
 .box-reloj {
-    height: 220px; 
+    border-bottom: 1px solid #ffcc00;
+    border-right: 1px solid #ffcc00;
+    height: 165px; 
     background: rgba(15, 15, 15, 0.85);
-    box-shadow: 0 10px 50px rgba(0,0,0,0.5);
-    padding: 30px;
-    border: 1px solid #ffcc00;
+    box-shadow: 0 10px 50px rgba(0,0,0,0.01);
+    padding-left: 5px; 
+    padding-right: 20px; 
+    border-bottom-right-radius: 25px;
 }
 
-#time { text-align: center; font-size: 9rem; font-weight: 400; line-height: 0.9; letter-spacing: -4px; }
-#date { font-size: 2.2rem; text-align: center; text-transform: capitalize; opacity: 0.8; }
+#time { text-align: center; font-size: 8rem; font-weight: 400; line-height: 0.9; letter-spacing: -4px; }
+#date { font-size: 2.0rem; text-align: center; text-transform: capitalize; opacity: 0.8; }
 
 .box-clima {
-    height: 220px; 
+    border-bottom: 1px solid #ffcc00;
+    border-left: 1px solid #ffcc00;
+    border-bottom-left-radius: 25px;
+    height: 165px; 
     width: fit-content; 
     background: rgba(15, 15, 15, 0.85);
-    padding: 25px; 
+    padding-left: 20px; 
+    padding-right: 5px; 
     box-shadow: 0 10px 50px rgba(0,0,0,0.5);
     display: flex;
     flex-direction: column;
     align-items: flex-end; 
-    border: 1px solid #ffcc00;
 }
 
 .temp-row { text-align: center;display: flex; align-items: center; justify-content: flex-end; }
-#main-icon { text-align: center;font-size: 6rem; margin-right: 20px; color: #ffcc00 !important; }
-#temp-big { text-align: center;font-size: 8rem; font-weight: 400; line-height: 0.9; display: inline-block; }
-#weather-status { margin-top: 10px;text-align: center;color: #ffffff; font-weight: 700; text-transform: uppercase; font-size: 2.4rem; }
+#main-icon { text-align: center;font-size: 5rem; margin-right: 20px; color: #ffcc00 !important; }
+#temp-big { text-align: center;font-size: 7.0rem; font-weight: 400; line-height: 0.9; display: inline-block; }
+#weather-status { text-align: center;color: #ffffff; font-weight: 700; text-transform: uppercase; font-size: 2.4rem; }
 
 /* ==========================================================================
    5. PRONÓSTICO SEMANAL (ABAJO IZQUIERDA)
    ========================================================================== */
 .forecast-area { 
     position: absolute; 
-    bottom: 20px; 
-    left: 20px; 
+    bottom: 1px; 
+    left: 1px; 
     z-index: 100; 
 }
 
 #forecast-box {
     display: flex;
-    height: 250px; /* Igualamos a la altura de la derecha */
+    height: 200px; /* Igualamos a la altura de la derecha */
 }
 
 .loc-label { 
@@ -158,55 +160,71 @@ body, html {
     display: inline-block; 
 }
 
-.f-name { font-size: 2.0rem; color: #ffcc00; font-weight: 900; display: block; margin-bottom: 10px; } 
-.f-icon { font-size: 6rem; display: block; color: #ffcc00 !important; } 
-.f-temp { font-size: 2.0rem; font-weight: bold; display: block; margin-bottom: 15px; color: #ffffff; }
+.f-name { font-size: 2.0rem; color: #ffcc00; font-weight: 900; display: block;} 
+.f-icon { font-size: 5rem; display: block; color: #ffcc00 !important; } 
+.f-temp { font-size: 2.0rem; font-weight: bold; display: block; color: #ffffff; }
 
 /* ==========================================================================
-   6. NUEVO RECUADRO DE HORAS (ABAJO DERECHA)
+   6. NUEVO RECUADRO DE HORAS (CENTRADO ABAJO - FORMATO FILA)
    ========================================================================== */
 #hourly-box {
-        border: 1px solid #ffcc00;
-
-    height: 250px;
+    border-radius: 25px 25px 0 0; 
+    border: 1px solid #ffcc00;
+    border-bottom: none;
+    
+    height: 120px; /* Un poco más bajo ya que al ser horizontal ocupa menos alto */
+    width: 90%;    /* Casi todo el ancho para que quepan bien los textos grandes */
+    
     position: absolute;
-    bottom: 20px;
-    right: 20px;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    
     z-index: 100;
-    width: 600px; /* Ancho para las 4 horas en fila */
-    background: rgba(15, 15, 15, 0.85);
+    background: rgba(15, 15, 15, 0.9);
+    display: flex;
+    align-items: center;
+    padding: 0 30px;
 }
 
 #hourly-container {
     display: flex;
-    justify-content: space-between;
+    justify-content: space-around; /* Distribuye las 4 horas equitativamente */
+    align-items: center;
     width: 100%;
 }
 
 .h-item {
     display: flex;
-    flex-direction: column;
+    flex-direction: row; /* Elementos en línea */
     align-items: center;
-    flex: 1;
+    gap: 15px; /* Espacio entre hora, icono y temperatura */
 }
 
 .h-time {
-    font-size: 2.0rem !important;
+    font-size: 3.2rem !important; /* Letras más grandes */
     color: #ffcc00 !important;
-    font-weight: 700;
+    font-weight: 800;
 }
 
 .h-icon {
-    font-size: 5.0rem !important; 
-    margin: 8px 0 !important;
-    display: block;
-    color: #ffcc00 !important; /* Forzado de color amarillo */
+    font-size: 4.2rem !important; /* Icono más grande */
+    color: #ffcc00 !important;
+    line-height: 1;
 }
 
 .h-temp {
-    font-size: 2.0rem !important;
-    font-weight: 700;
+    font-size: 3.5rem !important; /* Temperatura más grande */
+    font-weight: 800;
     color: #fff !important;
+}
+
+/* Separador opcional entre grupos de horas */
+.h-item:not(:last-child)::after {
+    content: "|";
+    color: #333;
+    font-size: 3rem;
+    margin-left: 20px;
 }
 
 /* ==========================================================================

@@ -4,9 +4,15 @@ const CONFIG = {
     rutaFotos: "./fotos/",
     showTopBanner: false,    // Cambia a false para ocultar noticias
     showBottomBanner: false,  // Cambia a false para ocultar avisos
+    weather: {
+        key: "8f654dc96a73ae116e8e650823ab0bd8",
+        city1: "Cabanillas del Campo,ES",
+        units: "metric",
+        lang: "es"
+    },
     tiempos: {
         foto: 20000,        
-        ciudad: 30000,      
+        ciudad: 3000,      
         climaAPI: 300000,
         noticias: 20000,
         demoEfecto: 20000   // Cada efecto durará 12 segundos
