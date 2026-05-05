@@ -76,11 +76,9 @@ const MainContent = {
     const container = document.getElementById('hourly-container');
     if (!container) return;
 
-    // Cogemos los próximos 4 registros (OpenWeather los da cada 3 horas)
     const nextHours = list.slice(0, 4);
     
     container.innerHTML = nextHours.map(h => {
-        // CORRECCIÓN AQUÍ: Usamos '2-digit' para que JavaScript no de error
         const time = new Date(h.dt * 1000).toLocaleTimeString('es-ES', { 
             hour: '2-digit', 
             minute: '2-digit' 
@@ -88,9 +86,11 @@ const MainContent = {
 
         return `
             <div class="h-item">
-                <span class="h-time">${time}</span>
+                <div class="h-text-group">
+                    <span class="h-time">${time}</span>
+                    <span class="h-temp">${Math.round(h.main.temp)}º</span>
+                </div>
                 <span class="h-icon">${this.getIcon(h.weather[0].icon)}</span>
-                <span class="h-temp">${Math.round(h.main.temp)}º</span>
             </div>`;
     }).join('');
 },
@@ -129,12 +129,11 @@ const MainContent = {
 
         const emoji = icons[code] || "☀️";
 
-        // Si el código es 01d (Sol despejado), le ponemos el color amarillo
-        if (code === "01d") {
+        // Si quieres que el Sol y la Luna de las horas sean amarillos pero las nubes NO:
+        if (code === "01d" || code === "01n") {
             return `<span style="color: #ffcc00;">${emoji}</span>`;
         }
 
-        // Para el resto (nubes, lluvia, etc.), devolvemos el emoji normal
         return emoji;
     }
 };
