@@ -4,19 +4,22 @@ const MainContent = {
     datosTorrevieja: null,
 
     init() {
-        if (window.mainContentStarted) return;
-        window.mainContentStarted = true;
-
+        console.log("MainContent: Iniciando...");
         this.updateClock();
         setInterval(() => this.updateClock(), 1000);
 
+        // Primera carga manual
         this.updateAllData();
+
+        // Refresco automático cada X minutos (según tu CONFIG)
         setInterval(() => this.updateAllData(), CONFIG.tiempos.climaAPI);
 
+        /* 
         setInterval(() => {
             this.currentIdx = (this.currentIdx + 1) % 2;
             this.renderAll();
-        }, CONFIG.tiempos.ciudad);
+        }, CONFIG.tiempos.ciudad); 
+        */
     },
 
     updateClock() {
@@ -36,17 +39,23 @@ const MainContent = {
     },
 
     async updateAllData() {
+        console.log("Solicitando clima para:", CONFIG.weather.city1);
         try {
-            this.datosCabanillas = await this.fetchWeather(CONFIG.weather.city1);
-            this.datosTorrevieja = await this.fetchWeather(CONFIG.weather.city2);
-            this.renderAll();
-        } catch (e) { console.error("Error en OpenWeather:", e); }
+            const data = await this.fetchWeather(CONFIG.weather.city1);
+            if (data) {
+                this.datosCabanillas = data;
+                console.log("Datos recibidos correctamente:", data.current.main.temp, "ºC");
+                this.renderAll();
+            }
+        } catch (e) {
+            console.error("Error crítico al obtener clima:", e);
+        }
     },
 
     renderAll() {
         const data = (this.currentIdx === 0) ? this.datosCabanillas : this.datosTorrevieja;
-        if (!data) return;
-
+        if (!data || !data.current) return;
+        
         // 1. Ciudad Actual
         //const label = document.querySelector('.loc-label');
         //if (label) label.innerText = (this.currentIdx === 0) ? "CABANILLAS DEL CAMPO" : "TORREVIEJA";
@@ -117,6 +126,15 @@ const MainContent = {
             "13d": "❄️", "13n": "❄️",
             "50d": "🌫️", "50n": "🌫️"
         };
-        return icons[code] || "☀️";
+
+        const emoji = icons[code] || "☀️";
+
+        // Si el código es 01d (Sol despejado), le ponemos el color amarillo
+        if (code === "01d") {
+            return `<span style="color: #ffcc00;">${emoji}</span>`;
+        }
+
+        // Para el resto (nubes, lluvia, etc.), devolvemos el emoji normal
+        return emoji;
     }
 };

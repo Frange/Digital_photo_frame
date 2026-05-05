@@ -63,7 +63,7 @@ body, html {
 #total-photos { color: #888; font-weight: 700; font-size: 1.1rem; }
 
 /* ==========================================================================
-   3. CAPAS DE FONDO (CENTRADAS SIN CORTES)
+   3. CAPAS DE FONDO
    ========================================================================== */
 #bg-container { 
     position: fixed; 
@@ -93,6 +93,7 @@ body, html {
     width: 100%;
     height: 100%;
     
+    transform: scaleX(1.25);
     /* Mantenemos la opacidad y la transición */
     opacity: 1;
     transition: opacity 0.5s ease-in-out; 
@@ -124,7 +125,7 @@ body, html {
     height: 165px; 
     background: rgba(15, 15, 15, 0.85);
     box-shadow: 0 10px 50px rgba(0,0,0,0.01);
-    padding-left: 5px; 
+    padding-left: 20px; 
     padding-right: 20px; 
     border-bottom-right-radius: 25px;
 }
@@ -140,7 +141,7 @@ body, html {
     width: fit-content; 
     background: rgba(15, 15, 15, 0.85);
     padding-left: 20px; 
-    padding-right: 5px; 
+    padding-right: 20px; 
     box-shadow: 0 10px 50px rgba(0,0,0,0.5);
     display: flex;
     flex-direction: column;
@@ -148,7 +149,7 @@ body, html {
 }
 
 .temp-row { text-align: center;display: flex; align-items: center; justify-content: flex-end; }
-#main-icon { text-align: center;font-size: 5rem; margin-right: 20px; color: #ffcc00 !important; }
+#main-icon { text-align: center;font-size: 5rem; margin-right: 20px;}
 #temp-big { text-align: center;font-size: 7.0rem; font-weight: 400; line-height: 0.9; display: inline-block; }
 #weather-status { text-align: center;color: #ffffff; font-weight: 700; text-transform: uppercase; font-size: 2.4rem; }
 
@@ -229,6 +230,7 @@ body, html {
     display: flex;
     flex-direction: row; /* Elementos en línea */
     align-items: center;
+    transform: translateY(-5px);
     gap: 15px; /* Espacio entre hora, icono y temperatura */
 }
 
@@ -240,8 +242,8 @@ body, html {
 
 .h-icon {
     font-size: 4.2rem !important; /* Icono más grande */
-    color: #ffcc00 !important;
     line-height: 1;
+    margin-bottom: 8px;
 }
 
 .h-temp {
