@@ -10,12 +10,19 @@ const CONFIG = {
         active: true,            // Activa o desactiva todos los muñecos globalmente
         demoMode: true,         // Si es true, salen uno tras otro cada 10s para probarlos
         
+        filtros: {
+            isAll: false,       // Si es true, ignora el resto y muestra todo
+            isSimpsons: true,
+            isFuturama: false,
+            isSouthPark: false
+         },
+
         // Tiempos de permanencia en pantalla (Segundos)
         durations: {
             funny: 10,
-            food: 20,
-            night: 30,
-            characters: 20
+            food: 10,
+            night: 10,
+            characters: 10
         },
 
         // Frecuencias y rangos
@@ -23,6 +30,10 @@ const CONFIG = {
             // Funny: Rango aleatorio (en minutos)
             funnyMin: 30, 
             funnyMax: 120,
+
+            // Characters: Rango aleatorio para que aparezcan los personajes
+            charactersMin: 5,  // Mínimo cada 15 minutos
+            charactersMax: 45,  // Máximo cada 45 minutos
             
             // Food y Night: Cada cuánto chequear dentro de su horario (en minutos)
             foodInterval: 10,

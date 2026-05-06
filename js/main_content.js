@@ -2,9 +2,9 @@ const MainContent = {
     currentIdx: 0,
     datosCabanillas: null,
     nextFunnyTime: 0,
+    nextCharacterTime: 0,
     activeTimeout: null,
     funnyQueue: [],
-    // Añadimos array para las fotos de fondo
     fotos: ["1.jpg", "2.jpg", "3.jpg", "4.jpg", "5.jpg", "6.jpg", "7.jpg", "8.jpg", "9.jpg", "10.jpg"],
 
     getAnnouncerConfig() {
@@ -22,35 +22,29 @@ const MainContent = {
         console.log("MainContent: Iniciando...");
         this.announcers = this.getAnnouncerConfig();
         
-        // 1. Iniciar el carrusel de fondo inmediatamente
         this.updateBackground();
         setInterval(() => this.updateBackground(), CONFIG.tiempos.foto);
 
-        // 2. Reloj
         this.updateClock(); 
         setInterval(() => this.updateClock(), 1000);
         
-        // 3. Datos y clima
         this.updateAllData();
         setInterval(() => this.updateAllData(), CONFIG.tiempos.climaAPI);
+        
         this.scheduleNextFunny();
+        this.scheduleNextCharacter(); // <--- Inicializa el primer salto
     },
 
-    // FUNCIÓN RECUPERADA: Gestiona el cambio de imagen de fondo
     updateBackground() {
         const bgData = document.getElementById('bg-data');
         if (!bgData) return;
-
-        // Efecto de desvanecimiento suave
         bgData.style.opacity = '0';
-        
         setTimeout(() => {
             const foto = this.fotos[this.currentIdx];
             bgData.style.backgroundImage = `url('${CONFIG.rutaFotos}${foto}')`;
             bgData.style.opacity = '1';
-            
             this.currentIdx = (this.currentIdx + 1) % this.fotos.length;
-        }, 1000); // Espera a que la opacidad baje para cambiar la imagen
+        }, 1000);
     },
 
     updateClock() {
@@ -68,6 +62,7 @@ const MainContent = {
 
         if (!CONFIG.announcerSettings.active) return;
 
+        // MODO DEMO
         if (CONFIG.announcerSettings.demoMode) {
             if (S % 15 === 0) {
                 const tipos = ['funny', 'food', 'night', 'characters'];
@@ -76,6 +71,7 @@ const MainContent = {
             return; 
         }
 
+        // CAMBIO DE HORA
         if (M === 59 && S === 50) {
             const pHora = (H + 1) % 24;
             this.show('characters', `Van a ser las ${pHora}:00`);
@@ -84,56 +80,102 @@ const MainContent = {
             this.updateTextBubble(`¡Ya son las ${H}:00!`);
         }
 
+        // COMIDA
         const foodInt = CONFIG.announcerSettings.frecuencias.foodInterval;
         if (((HM >= 1330 && HM <= 1430) || (HM >= 2020 && HM <= 2120)) && M % foodInt === 0 && S === 0 && M !== 0) {
-            this.show('food', FRASES_ANNOUNCER.comida[Math.floor(Math.random() * FRASES_ANNOUNCER.comida.length)]);
+            const fraseC = FRASES_ANNOUNCER.comida[Math.floor(Math.random() * FRASES_ANNOUNCER.comida.length)];
+            this.show('food', fraseC);
         }
 
+        // NOCHE
         const nightInt = CONFIG.announcerSettings.frecuencias.nightInterval;
         if (HM >= 2200 && HM <= 2300 && M % nightInt === 0 && S === 0 && M !== 0) {
-            this.show('night', FRASES_ANNOUNCER.noche[Math.floor(Math.random() * FRASES_ANNOUNCER.noche.length)]);
+            const fraseN = FRASES_ANNOUNCER.noche[Math.floor(Math.random() * FRASES_ANNOUNCER.noche.length)];
+            this.show('night', fraseN);
         }
 
-        if (Date.now() >= this.nextFunnyTime && this.nextFunnyTime !== 0) {
+        // CHARACTERS (TIEMPO ALEATORIO)
+        if (Date.now() >= this.nextCharacterTime && this.nextCharacterTime !== 0) {
+            // Evitamos que pise el cambio de hora (minuto 59 y minuto 0)
             if (!(M === 59 && S >= 50) && !(M === 0 && S <= 10)) {
-                this.show('funny');
-                this.scheduleNextFunny();
+                this.show('characters');
+                this.scheduleNextCharacter();
             }
         }
     },
 
-    show(type, manualMessage = "") {
-        const config = this.announcers[type];
-        if (!config || config.count === 0) return;
+show(type, manualMessage = "") {
+    const filtros = CONFIG.announcerSettings.filtros;
+    
+    // 1. Selección de serie
+    let seriesDisponibles = [];
+    if (filtros.isAll) {
+        seriesDisponibles = Object.keys(FRASES_ANNOUNCER).filter(s => 
+            !['personajes', 'obtenerFrase', 'clima', 'horarios'].includes(s)
+        );
+    } else {
+        if (filtros.isSimpsons) seriesDisponibles.push('simpsons');
+        if (filtros.isFuturama) seriesDisponibles.push('futurama');
+        if (filtros.isSouthPark) seriesDisponibles.push('southpark');
+    }
 
-        if (this.activeTimeout) {
-            clearTimeout(this.activeTimeout);
-            this.hide();
-        }
+    if (seriesDisponibles.length === 0) return;
+    const serieElegida = seriesDisponibles[Math.floor(Math.random() * seriesDisponibles.length)];
 
-        const el = document.getElementById('hourly-announcer');
-        const img = document.getElementById('announcer-img');
-        const bubble = el.querySelector('.bubble');
-        const txt = document.getElementById('announcer-text');
+    // 2. Selección de Personaje Visual
+    const categorias = Object.keys(FRASES_ANNOUNCER[serieElegida]).filter(c => 
+        !['fotos', 'clima', 'horarios', 'genericos'].includes(c)
+    );
+    const personajeAleatorio = categorias[Math.floor(Math.random() * categorias.length)];
 
-        let idx = (type === 'funny' && this.funnyQueue.length > 0) ? this.funnyQueue.pop() : Math.floor(Math.random() * config.count) + 1;
-        if (type === 'funny' && this.funnyQueue.length === 0) {
-            this.funnyQueue = Array.from({length: config.count}, (_, i) => i + 1).sort(() => Math.random() - 0.5);
-        }
-
-        img.src = `./${config.path}${idx}.png`;
+    // 3. Lógica de Mensaje (Mezcla de frases)
+    let mensajeFinal = manualMessage;
+    
+    if (!mensajeFinal) {
+        // Creamos una bolsa con todas las frases de la serie
+        const bolsaFrases = [
+            ...(FRASES_ANNOUNCER[serieElegida][personajeAleatorio] || []), // Propias
+            ...(FRASES_ANNOUNCER[serieElegida].genericos || []),           // Genéricas
+            ...(FRASES_ANNOUNCER[serieElegida].clima || []),              // Clima
+            ...(FRASES_ANNOUNCER[serieElegida].horarios || [])            // Horarios
+        ];
         
-        const tempActual = this.datosCabanillas ? this.datosCabanillas.current.main.temp : 20;
-        const horaActual = new Date().getHours();
-        
-        let mensajeFinal = manualMessage || FRASES_ANNOUNCER.obtenerFrase(tempActual, horaActual);
-        
-        txt.innerText = mensajeFinal;
+        mensajeFinal = bolsaFrases[Math.floor(Math.random() * bolsaFrases.length)];
+    }
+
+    // 4. Lógica de Imagen (Basada en fotos.js)
+    const mapaFotos = FRASES_ANNOUNCER[serieElegida].fotos || { default: 1 };
+    const max = mapaFotos[personajeAleatorio] || mapaFotos.default || 1;
+    const numFoto = Math.floor(Math.random() * max) + 1;
+    const prefijo = (personajeAleatorio === 'genericos') ? 's' : personajeAleatorio;
+    const rutaImagen = `./announcers/characters/${serieElegida}/${prefijo}${numFoto}.png`;
+
+    // 5. Ejecución Visual
+    const img = document.getElementById('announcer-img');
+    const txt = document.getElementById('announcer-text');
+    const el = document.getElementById('hourly-announcer');
+    const bubble = el.querySelector('.bubble');
+
+    txt.innerText = mensajeFinal;
+    img.src = rutaImagen;
+
+    img.onload = () => {
         bubble.style.display = 'block';
-
         el.classList.add('announcer-visible');
-        this.activeTimeout = setTimeout(() => this.hide(), config.duration);
-    },
+    };
+
+    img.onerror = () => {
+        const rutaBackup = `./announcers/characters/${serieElegida}/${prefijo}1.png`;
+        if (img.src !== rutaBackup) img.src = rutaBackup;
+    };
+
+    const duracion = (CONFIG.announcerSettings.durations[type] || 10) * 1000;
+    if (this.activeTimeout) clearTimeout(this.activeTimeout);
+    this.activeTimeout = setTimeout(() => this.hide(), duracion);
+},
+
+
+
 
     hide() {
         const el = document.getElementById('hourly-announcer');
@@ -148,7 +190,17 @@ const MainContent = {
         const delay = Math.floor(Math.random() * (max - min + 1)) + min;
         this.nextFunnyTime = Date.now() + delay;
     },
-
+scheduleNextCharacter() {
+        const freq = CONFIG.announcerSettings.frecuencias;
+        // Si no existen en config, usamos 15 y 45 por defecto
+        const min = (freq.charactersMin || 15) * 60 * 1000;
+        const max = (freq.charactersMax || 45) * 60 * 1000;
+        
+        const delay = Math.floor(Math.random() * (max - min + 1)) + min;
+        this.nextCharacterTime = Date.now() + delay;
+        
+        console.log(`| ANNOUNCER | Próximo personaje en ${Math.round(delay/60000)} min.`);
+    },
     updateTextBubble(txt) {
         const el = document.getElementById('announcer-text');
         if (el) el.innerText = txt;
