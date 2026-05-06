@@ -107,6 +107,8 @@ body, html {
 .glass-box { 
     background: rgba(0,0,0,0.65); 
     backdrop-filter: blur(90px); 
+    position: relative;
+    z-index: 1000;
 }
 
 .header { 
@@ -207,15 +209,16 @@ body, html {
     border-bottom: none;
     height: 120px; 
     width: 90%; 
+    display: flex;
+    align-items: center;
+    overflow: hidden; /* Evita que si algo crece, rompa el diseño */
+    
+    z-index: 1100; /* Aumentado para estar por encima de los personajes (500) */
     position: absolute;
     bottom: 0;
     left: 50%;
     transform: translateX(-50%);
-    z-index: 100;
-    background: rgba(15, 15, 15, 0.9);
-    display: flex;
-    align-items: center;
-    overflow: hidden; /* Evita que si algo crece, rompa el diseño */
+    background: rgba(15, 15, 15, 0.95); /* Un poco más de opacidad para que no se transparente el personaje */
 }
 
 #hourly-container {
@@ -261,4 +264,60 @@ body, html {
     line-height: 1;
     display: inline-block;
     /* Aquí no debe haber NADA de color: #ffcc00 */
+}
+
+
+/* ==========================================================================
+   7. PERSONAJES
+   ========================================================================= */
+
+#hourly-announcer {
+    position: fixed;
+    bottom: -600px;
+    left: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: bottom 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    /* Subimos el z-index pero por debajo del cristal del reloj si prefieres */
+    z-index: 500; 
+}
+
+#hourly-announcer.announcer-visible {
+    bottom: 100px;
+}
+
+.bubble {
+    background: white;
+    border: 3px solid black;
+    border-radius: 15px;
+    padding: 10px 15px;
+    font-family: 'Comic Sans MS', 'Arial', sans-serif;
+    font-weight: bold;
+    color: black;
+    position: relative;
+    box-shadow: 4px 4px 0px rgba(0,0,0,0.2);
+    display: none; /* Se oculta por defecto, solo se ve en 'characters' */
+}
+
+/* El piquito del globo de comic */
+.bubble:after {
+    content: '';
+    position: absolute;
+    bottom: -15px;
+    left: 50%;
+    border-width: 15px 15px 0;
+    border-style: solid;
+    border-color: black transparent;
+    display: block;
+    width: 0;
+}
+
+#announcer-img {
+    max-width: 250px;
+    max-height: 40vh;
+    width: auto;
+    height: auto;
+    /* Esto asegura que si se solapa, el cuadro de horas (que debería tener z-index mayor) se vea delante */
+    position: relative;
 }

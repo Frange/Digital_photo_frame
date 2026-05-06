@@ -4,6 +4,32 @@ const CONFIG = {
     rutaFotos: "./fotos/",
     showTopBanner: false,    // Cambia a false para ocultar noticias
     showBottomBanner: false,  // Cambia a false para ocultar avisos
+
+    // --- NUEVA SECCIÓN DE ANUNCIANTES ---
+    announcerSettings: {
+        active: true,            // Activa o desactiva todos los muñecos globalmente
+        demoMode: true,         // Si es true, salen uno tras otro cada 10s para probarlos
+        
+        // Tiempos de permanencia en pantalla (Segundos)
+        durations: {
+            funny: 10,
+            food: 20,
+            night: 30,
+            characters: 20
+        },
+
+        // Frecuencias y rangos
+        frecuencias: {
+            // Funny: Rango aleatorio (en minutos)
+            funnyMin: 30, 
+            funnyMax: 120,
+            
+            // Food y Night: Cada cuánto chequear dentro de su horario (en minutos)
+            foodInterval: 10,
+            nightInterval: 30
+        }
+    },
+
     weather: {
         key: "8f654dc96a73ae116e8e650823ab0bd8",
         city1: "Cabanillas del Campo,ES",
