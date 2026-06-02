@@ -2,16 +2,16 @@ const CONFIG = {
     isDemo: false,
     mostrarEfectos: false,           
     rutaFotos: "./fotos/",
-    showTopBanner: false,    // Cambia a false para ocultar noticias
-    showBottomBanner: false,  // Cambia a false para ocultar avisos
+    showTopBanner: false,    
+    showBottomBanner: false,  
 
-    // --- NUEVA SECCIÓN DE ANUNCIANTES ---
+    // --- SECCIÓN DE ANUNCIANTES ---
     announcerSettings: {
-        active: true,            // Activa o desactiva todos los muñecos globalmente
-        demoMode: false,         // Si es true, salen uno tras otro cada 10s para probarlos
+        active: true,            
+        demoMode: false,         
         
         filtros: {
-            isAll: true,       // Si es true, ignora el resto y muestra todo
+            isAll: true,       
             isSimpsons: false,
             isFuturama: false,
             isSouthPark: false,
@@ -21,27 +21,21 @@ const CONFIG = {
             isOtros: false     
          },
 
-        // Tiempos de permanencia en pantalla (Segundos)
         durations: {
             food: 20,
             night: 20,
             characters: 20
         },
 
-        // Frecuencias y rangos
         frecuencias: {
-            // Characters: Rango aleatorio para que aparezcan los personajes
-            charactersMin: 1,  // Mínimo cada 15 minutos
-            charactersMax: 10,  // Máximo cada 45 minutos
-            
-            // Food y Night: Cada cuánto chequear dentro de su horario (en minutos)
+            charactersMin: 1,  
+            charactersMax: 10,  
             foodInterval: 10,
             nightInterval: 30
         }
     },
 
     weather: {
-        //key: "8f654dc96a73ae116e8e650823ab0bd8", OpenWeather
         key_tomorrow_1: "X9GtLJ9n6melFsmRTJpFIgXsQQ3feyLG",
         key_tomorrow_2: "lQ0oBNc6sce82Xe3YoSQ4zELbs8DHO7O",
         key_tomorrow_3: "EZBw5ialt6n8tMMioU1g5ptV9ZlOoGJw",
@@ -50,94 +44,53 @@ const CONFIG = {
         lang: "es"
     },
     tiempos: {
-        climaAPI: 15 * 60 * 1000,
         foto: 20000,        
         ciudad: 3000,      
-        climaAPI: 300000,
+        climaAPI: 15 * 60 * 1000, // CORREGIDO: Unificado a 15 min (900000ms) para proteger tus llamadas
         noticias: 20000,
-        demoEfecto: 20000   // Cada efecto durará 12 segundos
+        demoEfecto: 20000   
     },
 
-    // PARÁMETROS DE EFECTOS
-   efectos: {
-        // SOL
-        solBrilloNucleo: 8.0,      // Multiplicador de brillo central (0.0 a 1.0)
-        solBrilloHalos: 0.010,      // Brillo de los halos circulares
+    efectos: {
+        solBrilloNucleo: 8.0,      
+        solBrilloHalos: 0.010,      
         solRotacionVelocidad: 0.0000012, 
-        solEscalaFuga: 8,          // Qué tanto se estira el destello (vapor)
-
-        // NUBES
+        solEscalaFuga: 8,          
         nubesCantidad: 30,
         nubesTransparencia: 0.09,
         nubesVelocidadIzquierda: 0.99,
         nubesVelocidadDerecha: 0.99,
         nubesAlturaLimite: 0.30,
-
-        // LLUVIA
         lluviaCantidad: 250,
         lluviaVelocidad: 25,
-
-
-        // NOCHE
-        nocheOscuridad: 1.0,       // 1.0 = Negro puro arriba
+        nocheOscuridad: 1.0,       
         estrellasCantidad: 400,
-        estrellasParpadeo: 0.1,  // Velocidad del brillo
-        estrellasRotacion: 0.00001, // Velocidad de giro del firmamento
-        estrellasFugacesFrecuencia: 0.0002, // Probabilidad por frame (~3-5 cada 5 min)
-        nocheTransparencia: 0.9,    // Opacidad de la transición media (0.0 a 1.0)
-        nocheAlturaLimite: 0.40,    // Hasta dónde bajan las estrellas (0.65 = 65% de la pantalla)
-
-        // GRANIZO
+        estrellasParpadeo: 0.1,  
+        estrellasRotacion: 0.00001, 
+        estrellasFugacesFrecuencia: 0.0002, 
+        nocheTransparencia: 0.9,    
+        nocheAlturaLimite: 0.40,    
         granizoCantidad: 30,
         granizoVelocidad: 20,
-
-        // NIEVE
         nieveCantidad: 400,
-        nieveSueloOpacidad: 0.8,  // Añadido: 0.8 es bastante opaco, bajalo a 0.5 si quieres que sea más transparente.
-
-        // NIEBLA
+        nieveSueloOpacidad: 0.8,  
         nieblaVelocidad: 2.00, 
-        nieblaCantidad: 50,                // Densidad de "bocanadas" de niebla
-        nieblaTransparencia: 0.12,         // Nivel de opacidad base (0.0 a 1.0). Mantener bajo para que se vea la foto.
-        nieblaAlturaMinima: 0.1,           // Altura mínima en pantalla donde puede APARACER (0.6 = 60% de la pantalla hacia abajo).
-        nieblaAlturaMaxima: 0.0,           // Altura máxima hasta donde puede bajar (1.0 = suelo).
-
-        // TORMENTA
+        nieblaCantidad: 50,                
+        nieblaTransparencia: 0.12,         
+        nieblaAlturaMinima: 0.1,           
+        nieblaAlturaMaxima: 0.0,           
         tormentaFrecuencia: 0.982,
-        tormentaRayoFrecuencia: 0.025,      // Probabilidad de rayo dibujado por frame
-        tormentaRelampagoFrecuencia: 0.03,  // Probabilidad de flash de fondo por frame
-        tormentaVelocidadDesvanecimiento: 0.02, // Menos de 0.05 es más lento/suave
+        tormentaRayoFrecuencia: 0.025,      
+        tormentaRelampagoFrecuencia: 0.03,  
+        tormentaVelocidadDesvanecimiento: 0.02, 
     },
 
-    // Orden de los efectos en la demo
     demoModos: [
-
-        'Día: Sol', 
-        'Día: Sol con nubes', 
-        'Día: Lluvia', 
-        'Día: Llovizna', 
-        'Día: Nubes', 
-
-        'Noche: Granizo', 
-        'Día: Niebla', 
-        'Día: Nieve', 
-        'Día: Niebla', 
-        'Día: Tormenta y Lluvia', 
-        
-        'Día: Tormenta', 
-        'Día: Granizo', 
-        'Día: Viento fuerte',
-
-        'Noche: Limpio', 
-        'Noche: Nubes', 
-        'Noche: Lluvia', 
-        'Noche: Llovizna', 
-        'Noche: Tormenta', 
-        'Noche: Tormenta y Lluvia', 
-        'Noche: Niebla', 
-        'Noche: Nieve',
-        'Noche: Niebla', 
-
+        'Día: Sol', 'Día: Sol con nubes', 'Día: Lluvia', 'Día: Llovizna', 'Día: Nubes', 
+        'Noche: Granizo', 'Día: Niebla', 'Día: Nieve', 'Día: Niebla', 'Día: Tormenta y Lluvia', 
+        'Día: Tormenta', 'Día: Granizo', 'Día: Viento fuerte', 'Noche: Limpio', 'Noche: Nubes', 
+        'Noche: Lluvia', 'Noche: Llovizna', 'Noche: Tormenta', 'Noche: Tormenta y Lluvia', 
+        'Noche: Niebla', 'Noche: Nieve', 'Noche: Niebla'
     ],
     ciudades: [
         { nombre: "Cabanillas del Campo", query: "Cabanillas+del+Campo" },

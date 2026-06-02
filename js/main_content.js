@@ -1,18 +1,26 @@
-// 1. PRIMERO DEFINIMOS EL LOGGER (Para que esté disponible para lo demás)
+// 1. DEFINICIÓN DEL LOGGER CON PERSISTENCIA LOCAL STORAGE (Caja negra real)
 const ErrorLogger = {
-    logs: [],
+    logs: JSON.parse(localStorage.getItem('dashboard_errors')) || [],
+    
     add(type, message, details = "") {
         const now = new Date();
         const timestamp = now.toLocaleString('es-ES');
         const logEntry = `[${timestamp}] [${type.toUpperCase()}] ${message} ${details}`;
+        
         this.logs.push(logEntry);
-        // Usamos console.log normal para que lo veas siempre en la consola
+        
+        // Mantener solo los últimos 100 errores para no saturar la memoria de la Pi
+        if (this.logs.length > 100) this.logs.shift();
+        
+        // Guardado automático inmediato en la memoria del navegador
+        localStorage.setItem('dashboard_errors', JSON.stringify(this.logs));
+        
         console.log("%c LOG ", "background: #ffcc00; color: #000; font-weight: bold;", logEntry);
     },
 
     downloadLog() {
         if (this.logs.length === 0) {
-            alert("No hay errores registrados.");
+            alert("No hay errores registrados en el LocalStorage.");
             return;
         }
         const now = new Date();
@@ -25,10 +33,16 @@ const ErrorLogger = {
         link.href = URL.createObjectURL(blob);
         link.download = filename;
         link.click();
+    },
+    
+    clear() {
+        this.logs = [];
+        localStorage.removeItem('dashboard_errors');
+        console.log("Historial de errores limpio.");
     }
 };
 
-// 2. DEFINIMOS EL CONTENIDO PRINCIPAL
+// 2. CONTENIDO PRINCIPAL
 const MainContent = {
     currentIdx: 0,
     datosCabanillas: null,
@@ -39,26 +53,55 @@ const MainContent = {
     fotos: ["1.jpg", "2.jpg", "3.jpg", "4.jpg", "5.jpg", "6.jpg", "7.jpg", "8.jpg", "9.jpg", "10.jpg"],
 
     init() {
-        console.log("%c MainContent: Iniciando... ", "background: #222; color: #bada55; font-weight: bold;");
+        console.log("%c MainContent: Iniciando de forma segura... ", "background: #222; color: #bada55; font-weight: bold;");
         
-        this.updateBackground();
-        setInterval(() => this.updateBackground(), CONFIG.tiempos.foto);
+        // Inicializar efectos del clima de forma controlada
+        try {
+            if (typeof WeatherEffects !== 'undefined') {
+                WeatherEffects.init('weather-canvas');
+            }
+        } catch (e) {
+            ErrorLogger.add("CRITICAL_CANVAS", "Fallo al iniciar efectos visuales", e.message);
+        }
 
-        this.updateClock(); 
-        setInterval(() => this.updateClock(), 1000);
-        
-        this.updateAllData();
-        setInterval(() => this.updateAllData(), CONFIG.tiempos.climaAPI);
+        // Inicializar galería si existe
+        try {
+            if (typeof Gallery !== 'undefined') Gallery.init();
+        } catch(e) {
+            ErrorLogger.add("GALLERY_ERROR", "Fallo en Gallery", e.message);
+        }
+
+        // Ejecuciones iniciales protegidas contra fallos síncronos
+        this.safeExecute(() => this.updateBackground(), "Fondo inicial");
+        this.safeExecute(() => this.updateClock(), "Reloj inicial");
+        this.safeExecute(() => this.updateAllData(), "Clima inicial");
+
+        // Configuración segura de bucles temporales usando los tiempos de CONFIG
+        setInterval(() => this.safeExecute(() => this.updateBackground(), "Bucle fondo"), CONFIG.tiempos.foto || 20000);
+        setInterval(() => this.safeExecute(() => this.updateClock(), "Bucle reloj"), 1000);
+        setInterval(() => this.safeExecute(() => this.updateAllData(), "Bucle clima"), CONFIG.tiempos.climaAPI || 900000);
         
         this.scheduleNextFunny();
         this.scheduleNextCharacter(); 
     },
 
+    safeExecute(fn, contextName) {
+        try {
+            fn();
+        } catch (e) {
+            ErrorLogger.add("EXECUTION_BLOCK", `Fallo en: ${contextName}`, e.message);
+        }
+    },
+
     updateBackground() {
         const bgData = document.getElementById('bg-data');
-        if (!bgData) return;
+        if (!bgData) {
+            ErrorLogger.add("DOM_ERROR", "No se encontró el elemento id='bg-data' en el HTML.");
+            return;
+        }
         bgData.style.opacity = '0';
         setTimeout(() => {
+            if (this.fotos.length === 0) return;
             const foto = this.fotos[this.currentIdx];
             bgData.style.backgroundImage = `url('${CONFIG.rutaFotos}${foto}')`;
             bgData.style.opacity = '1';
@@ -79,7 +122,7 @@ const MainContent = {
         if (timeEl) timeEl.innerText = d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
         if (dateEl) dateEl.innerText = d.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
 
-        if (!CONFIG.announcerSettings.active) return;
+        if (!CONFIG.announcerSettings || !CONFIG.announcerSettings.active) return;
 
         if (CONFIG.announcerSettings.demoMode) {
             if (S % 15 === 0) {
@@ -94,16 +137,20 @@ const MainContent = {
             this.show('characters', `Van a ser las ${pHora}:00`);
         }
 
-        const foodInt = CONFIG.announcerSettings.frecuencias.foodInterval;
+        const foodInt = CONFIG.announcerSettings.frecuencias.foodInterval || 10;
         if (((HM >= 1330 && HM <= 1430) || (HM >= 2020 && HM <= 2120)) && M % foodInt === 0 && S === 0 && M !== 0) {
-            const fraseC = FRASES_ANNOUNCER.comida[Math.floor(Math.random() * FRASES_ANNOUNCER.comida.length)];
-            this.show('characters', fraseC);
+            if (typeof FRASES_ANNOUNCER !== 'undefined' && FRASES_ANNOUNCER.comida) {
+                const fraseC = FRASES_ANNOUNCER.comida[Math.floor(Math.random() * FRASES_ANNOUNCER.comida.length)];
+                this.show('characters', fraseC);
+            }
         }
 
-        const nightInt = CONFIG.announcerSettings.frecuencias.nightInterval;
+        const nightInt = CONFIG.announcerSettings.frecuencias.nightInterval || 30;
         if (HM >= 2200 && HM <= 2300 && M % nightInt === 0 && S === 0 && M !== 0) {
-            const fraseN = FRASES_ANNOUNCER.noche[Math.floor(Math.random() * FRASES_ANNOUNCER.noche.length)];
-            this.show('characters', fraseN);
+            if (typeof FRASES_ANNOUNCER !== 'undefined' && FRASES_ANNOUNCER.noche) {
+                const fraseN = FRASES_ANNOUNCER.noche[Math.floor(Math.random() * FRASES_ANNOUNCER.noche.length)];
+                this.show('characters', fraseN);
+            }
         }
 
         if (Date.now() >= this.nextCharacterTime && this.nextCharacterTime !== 0) {
@@ -115,84 +162,98 @@ const MainContent = {
     },
 
     show(type, manualMessage = "") {
-        console.log(`| ANNOUNCER | Mostrando: ${type}`);
-        const filtros = CONFIG.announcerSettings.filtros;
-        let seriesDisponibles = [];
-        
-        if (filtros.isAll) {
-            seriesDisponibles = Object.keys(FRASES_ANNOUNCER).filter(s => 
-                !['personajes', 'clima', 'horarios', 'comida', 'noche'].includes(s)
-            );
-        } else {
-            if (filtros.isSimpsons) seriesDisponibles.push('simpsons');
-            if (filtros.isFuturama) seriesDisponibles.push('futurama');
-            if (filtros.isSouthPark) seriesDisponibles.push('southpark');
-            if (filtros.isDisney) seriesDisponibles.push('disney');
-            if (filtros.isWally) seriesDisponibles.push('wally');
-            if (filtros.isMrBean) seriesDisponibles.push('mrbean');
-            if (filtros.isOtros) seriesDisponibles.push('otros');
-        }
-
-        if (seriesDisponibles.length === 0) return;
-        const serieElegida = seriesDisponibles[Math.floor(Math.random() * seriesDisponibles.length)];
-
-        const categorias = Object.keys(FRASES_ANNOUNCER[serieElegida]).filter(c => 
-            !['fotos', 'clima', 'horarios', 'genericos'].includes(c)
-        );
-        const personajeAleatorio = categorias.length > 0 
-            ? categorias[Math.floor(Math.random() * categorias.length)] 
-            : 'genericos';
-
-        let mensajeFinal = manualMessage;
-        if (!mensajeFinal) {
-            const bolsaFrases = [
-                ...(FRASES_ANNOUNCER[serieElegida][personajeAleatorio] || []),
-                ...(FRASES_ANNOUNCER[serieElegida].genericos || [])
-            ];
-            if (this.datosCabanillas) {
-                bolsaFrases.push(...(FRASES_ANNOUNCER[serieElegida].clima || []));
+        try {
+            if (typeof FRASES_ANNOUNCER === 'undefined') {
+                throw new Error("FRASES_ANNOUNCER no está cargado.");
             }
-            mensajeFinal = bolsaFrases[Math.floor(Math.random() * bolsaFrases.length)] || "...";
-        }
+            console.log(`| ANNOUNCER | Mostrando: ${type}`);
+            const filtros = CONFIG.announcerSettings.filtros;
+            let seriesDisponibles = [];
+            
+            if (filtros.isAll) {
+                seriesDisponibles = Object.keys(FRASES_ANNOUNCER).filter(s => 
+                    !['personajes', 'clima', 'horarios', 'comida', 'noche'].includes(s)
+                );
+            } else {
+                if (filtros.isSimpsons) seriesDisponibles.push('simpsons');
+                if (filtros.isFuturama) seriesDisponibles.push('futurama');
+                if (filtros.isSouthPark) seriesDisponibles.push('southpark');
+                if (filtros.isDisney) seriesDisponibles.push('disney');
+                if (filtros.isWally) seriesDisponibles.push('wally');
+                if (filtros.isMrBean) seriesDisponibles.push('mrbean');
+                if (filtros.isOtros) seriesDisponibles.push('otros');
+            }
 
-        let prefijo;
-        if (personajeAleatorio === 'genericos') {
-            const mapaPrefijos = {
-                simpsons: 's', futurama: 'f', southpark: 's',
-                wally: 'w', mrbean: 'b', otros: 'o', disney: 'bugs' 
+            if (seriesDisponibles.length === 0) return;
+            const serieElegida = seriesDisponibles[Math.floor(Math.random() * seriesDisponibles.length)];
+
+            const categorias = Object.keys(FRASES_ANNOUNCER[serieElegida]).filter(c => 
+                !['fotos', 'clima', 'horarios', 'genericos'].includes(c)
+            );
+            const personajeAleatorio = categorias.length > 0 
+                ? categorias[Math.floor(Math.random() * categorias.length)] 
+                : 'genericos';
+
+            let mensajeFinal = manualMessage;
+            if (!mensajeFinal) {
+                const bolsaFrases = [
+                    ...(FRASES_ANNOUNCER[serieElegida][personajeAleatorio] || []),
+                    ...(FRASES_ANNOUNCER[serieElegida].genericos || [])
+                ];
+                if (this.datosCabanillas) {
+                    bolsaFrases.push(...(FRASES_ANNOUNCER[serieElegida].clima || []));
+                }
+                mensajeFinal = bolsaFrases[Math.floor(Math.random() * bolsaFrases.length)] || "...";
+            }
+
+            let prefijo;
+            if (personajeAleatorio === 'genericos') {
+                const mapaPrefijos = {
+                    simpsons: 's', futurama: 'f', southpark: 's',
+                    wally: 'w', mrbean: 'b', otros: 'o', disney: 'bugs' 
+                };
+                prefijo = mapaPrefijos[serieElegida] || 's';
+            } else {
+                prefijo = personajeAleatorio;
+            }
+
+            const mapaFotos = FRASES_ANNOUNCER[serieElegida].fotos || { default: 1 };
+            const max = mapaFotos[prefijo] || mapaFotos.default || 1;
+            const numFoto = Math.floor(Math.random() * max) + 1;
+            const rutaImagen = `./announcers/characters/${serieElegida}/${prefijo}${numFoto}.png`;
+
+            const img = document.getElementById('announcer-img');
+            const txt = document.getElementById('announcer-text');
+            const el = document.getElementById('hourly-announcer');
+            const bubble = el ? el.querySelector('.bubble') : null;
+
+            if (!img || !txt || !el) return;
+
+            txt.innerText = mensajeFinal;
+            img.src = rutaImagen;
+
+            img.onload = () => {
+                if(bubble) bubble.style.display = 'block';
+                el.classList.add('announcer-visible');
             };
-            prefijo = mapaPrefijos[serieElegida] || 's';
-        } else {
-            prefijo = personajeAleatorio;
+
+            img.onerror = () => {
+                ErrorLogger.add("FILE_NOT_FOUND", `Imagen ausente: ${rutaImagen}`);
+                const rutaBackup = `./announcers/characters/${serieElegida}/${prefijo}1.png`;
+                if (img.src !== rutaBackup) {
+                    img.src = rutaBackup;
+                } else {
+                    ErrorLogger.add("CRITICAL_IMAGE", `Tampoco se localiza la imagen backup: ${rutaBackup}`);
+                    MainContent.hide(); // Cerramos para evitar bloqueos visuales
+                }
+            };
+
+            const duracion = (CONFIG.announcerSettings.durations[type] || 10) * 1000;
+            if (this.activeTimeout) clearTimeout(this.activeTimeout);
+            this.activeTimeout = setTimeout(() => this.hide(), duracion);
+        } catch(err) {
+            ErrorLogger.add("RENDER_SHOW_ERROR", "Fallo crítico en función show", err.message);
         }
-
-        const mapaFotos = FRASES_ANNOUNCER[serieElegida].fotos || { default: 1 };
-        const max = mapaFotos[prefijo] || mapaFotos.default || 1;
-        const numFoto = Math.floor(Math.random() * max) + 1;
-        const rutaImagen = `./announcers/characters/${serieElegida}/${prefijo}${numFoto}.png`;
-
-        const img = document.getElementById('announcer-img');
-        const txt = document.getElementById('announcer-text');
-        const el = document.getElementById('hourly-announcer');
-        const bubble = el.querySelector('.bubble');
-
-        txt.innerText = mensajeFinal;
-        img.src = rutaImagen;
-
-        img.onload = () => {
-            if(bubble) bubble.style.display = 'block';
-            el.classList.add('announcer-visible');
-        };
-
-        img.onerror = () => {
-            ErrorLogger.add("FILE_NOT_FOUND", `Imagen ausente: ${rutaImagen}`);
-            const rutaBackup = `./announcers/characters/${serieElegida}/${prefijo}1.png`;
-            if (img.src !== rutaBackup) img.src = rutaBackup;
-        };
-
-        const duracion = (CONFIG.announcerSettings.durations[type] || 10) * 1000;
-        if (this.activeTimeout) clearTimeout(this.activeTimeout);
-        this.activeTimeout = setTimeout(() => this.hide(), duracion);
     },
 
     hide() {
@@ -210,14 +271,18 @@ const MainContent = {
 
     scheduleNextCharacter() {
         const freq = CONFIG.announcerSettings.frecuencias;
-        const min = (freq.charactersMin || 15) * 60 * 1000;
-        const max = (freq.charactersMax || 45) * 60 * 1000;
+        const min = (freq.charactersMin || 1) * 60 * 1000;
+        const max = (freq.charactersMax || 10) * 60 * 1000;
         const delay = Math.floor(Math.random() * (max - min + 1)) + min;
         this.nextCharacterTime = Date.now() + delay;
         console.log(`| ANNOUNCER | Próximo personaje en ${Math.round(delay/60000)} min.`);
     },
 
     async updateAllData() {
+        if (typeof WeatherService === 'undefined') {
+            ErrorLogger.add("SERVICE_MISSING", "Falta el script weather.js");
+            return;
+        }
         const data = await WeatherService.getWeatherData();
         if (data) { 
             this.datosCabanillas = data; 
@@ -228,12 +293,19 @@ const MainContent = {
     renderAll() {
         const data = this.datosCabanillas;
         if (!data) return;
-        document.getElementById('temp-big').innerText = data.current.temp + "ºC";
-        document.getElementById('weather-status').innerText = data.current.status.toUpperCase();
+        
+        const tempEl = document.getElementById('temp-big');
+        const statusEl = document.getElementById('weather-status');
         const iconEl = document.getElementById('main-icon');
-        iconEl.innerHTML = (data.current.code === 1000) ? `<span style="color: #ffcc00;">${data.current.icon}</span>` : data.current.icon;
         const container = document.getElementById('hourly-container');
-        if (container) {
+
+        if (tempEl) tempEl.innerText = data.current.temp + "ºC";
+        if (statusEl) statusEl.innerText = data.current.status.toUpperCase();
+        if (iconEl) {
+            iconEl.innerHTML = (data.current.code === 1000) ? `<span style="color: #ffcc00;">${data.current.icon}</span>` : data.current.icon;
+        }
+        
+        if (container && data.hourly) {
             container.innerHTML = data.hourly.map(h => `
                 <div class="h-item">
                     <div class="h-text-group">
@@ -251,12 +323,13 @@ const MainContent = {
     }
 };
 
-// 3. CAPTURADOR GLOBAL
+// 3. CAPTURADOR DE ERRORES GLOBAL (Captura cualquier fallo sintáctico o de recursos)
 window.onerror = function(message, source, lineno, colno, error) {
-    ErrorLogger.add("JS_ERROR", message, `en ${source}:${lineno}`);
+    ErrorLogger.add("JS_CRITICAL_ERROR", message, `en ${source}:${lineno}`);
+    return false; // Deja que se muestre en consola también
 };
 
-// 4. EL DISPARADOR (Sin esto no funciona nada)
+// 4. DISPARADOR UNIFICADO
 document.addEventListener('DOMContentLoaded', () => {
     MainContent.init();
 });
