@@ -8,32 +8,31 @@ const CONFIG = {
     // --- NUEVA SECCIÓN DE ANUNCIANTES ---
     announcerSettings: {
         active: true,            // Activa o desactiva todos los muñecos globalmente
-        demoMode: true,         // Si es true, salen uno tras otro cada 10s para probarlos
+        demoMode: false,         // Si es true, salen uno tras otro cada 10s para probarlos
         
         filtros: {
-            isAll: false,       // Si es true, ignora el resto y muestra todo
-            isSimpsons: true,
+            isAll: true,       // Si es true, ignora el resto y muestra todo
+            isSimpsons: false,
             isFuturama: false,
-            isSouthPark: false
+            isSouthPark: false,
+            isDisney: false,    
+            isWally: false,    
+            isMrBean: false,    
+            isOtros: false     
          },
 
         // Tiempos de permanencia en pantalla (Segundos)
         durations: {
-            funny: 10,
-            food: 10,
-            night: 10,
-            characters: 10
+            food: 20,
+            night: 20,
+            characters: 20
         },
 
         // Frecuencias y rangos
         frecuencias: {
-            // Funny: Rango aleatorio (en minutos)
-            funnyMin: 30, 
-            funnyMax: 120,
-
             // Characters: Rango aleatorio para que aparezcan los personajes
-            charactersMin: 5,  // Mínimo cada 15 minutos
-            charactersMax: 45,  // Máximo cada 45 minutos
+            charactersMin: 1,  // Mínimo cada 15 minutos
+            charactersMax: 10,  // Máximo cada 45 minutos
             
             // Food y Night: Cada cuánto chequear dentro de su horario (en minutos)
             foodInterval: 10,
@@ -42,12 +41,16 @@ const CONFIG = {
     },
 
     weather: {
-        key: "8f654dc96a73ae116e8e650823ab0bd8",
-        city1: "Cabanillas del Campo,ES",
+        //key: "8f654dc96a73ae116e8e650823ab0bd8", OpenWeather
+        key_tomorrow_1: "X9GtLJ9n6melFsmRTJpFIgXsQQ3feyLG",
+        key_tomorrow_2: "lQ0oBNc6sce82Xe3YoSQ4zELbs8DHO7O",
+        key_tomorrow_3: "EZBw5ialt6n8tMMioU1g5ptV9ZlOoGJw",
+        city1: "Cabanillas",
         units: "metric",
         lang: "es"
     },
     tiempos: {
+        climaAPI: 15 * 60 * 1000,
         foto: 20000,        
         ciudad: 3000,      
         climaAPI: 300000,
@@ -125,7 +128,7 @@ const CONFIG = {
         'Día: Granizo', 
         'Día: Viento fuerte',
 
-'Noche: Limpio', 
+        'Noche: Limpio', 
         'Noche: Nubes', 
         'Noche: Lluvia', 
         'Noche: Llovizna', 
