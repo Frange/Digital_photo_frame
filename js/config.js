@@ -46,7 +46,7 @@ const CONFIG = {
     tiempos: {
         foto: 20000,        
         ciudad: 3000,      
-        climaAPI: 15 * 60 * 1000, // CORREGIDO: Unificado a 15 min (900000ms) para proteger tus llamadas
+        climaAPI: 15 * 60 * 1000, // 15 min (900000ms)
         noticias: 20000,
         demoEfecto: 20000   
     },
