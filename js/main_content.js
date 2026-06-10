@@ -1,4 +1,4 @@
-// 1. DEFINICIÓN DEL LOGGER CON PERSISTENCIA LOCAL STORAGE (Caja negra real)
+// 1. DEFINICIÓN DEL LOGGER CON PERSISTENCIA LOCAL STORAGE
 const ErrorLogger = {
     logs: JSON.parse(localStorage.getItem('dashboard_errors')) || [],
     
@@ -8,13 +8,9 @@ const ErrorLogger = {
         const logEntry = `[${timestamp}] [${type.toUpperCase()}] ${message} ${details}`;
         
         this.logs.push(logEntry);
+        if (this.logs.length > 100) this.logs.shift(); // Mantener solo los últimos 100
         
-        // Mantener solo los últimos 100 errores para no saturar la memoria de la Pi
-        if (this.logs.length > 100) this.logs.shift();
-        
-        // Guardado automático inmediato en la memoria del navegador
         localStorage.setItem('dashboard_errors', JSON.stringify(this.logs));
-        
         console.log("%c LOG ", "background: #ffcc00; color: #000; font-weight: bold;", logEntry);
     },
 
@@ -24,10 +20,7 @@ const ErrorLogger = {
             return;
         }
         const now = new Date();
-        const fecha = now.toISOString().slice(0,10);
-        const hora = now.getHours() + "-" + now.getMinutes();
-        const filename = `error_${fecha}_${hora}.txt`;
-        
+        const filename = `error_${now.toISOString().slice(0,10)}_${now.getHours()}-${now.getMinutes()}.txt`;
         const blob = new Blob([this.logs.join('\n')], { type: 'text/plain' });
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
@@ -55,7 +48,6 @@ const MainContent = {
     init() {
         console.log("%c MainContent: Iniciando de forma segura... ", "background: #222; color: #bada55; font-weight: bold;");
         
-        // Inicializar efectos del clima de forma controlada
         try {
             if (typeof WeatherEffects !== 'undefined') {
                 WeatherEffects.init('weather-canvas');
@@ -64,19 +56,18 @@ const MainContent = {
             ErrorLogger.add("CRITICAL_CANVAS", "Fallo al iniciar efectos visuales", e.message);
         }
 
-        // Inicializar galería si existe
         try {
             if (typeof Gallery !== 'undefined') Gallery.init();
         } catch(e) {
             ErrorLogger.add("GALLERY_ERROR", "Fallo en Gallery", e.message);
         }
 
-        // Ejecuciones iniciales protegidas contra fallos síncronos
+        // Ejecuciones iniciales seguras
         this.safeExecute(() => this.updateBackground(), "Fondo inicial");
         this.safeExecute(() => this.updateClock(), "Reloj inicial");
         this.safeExecute(() => this.updateAllData(), "Clima inicial");
 
-        // Configuración segura de bucles temporales usando los tiempos de CONFIG
+        // Intervalos de tiempo protegidos
         setInterval(() => this.safeExecute(() => this.updateBackground(), "Bucle fondo"), CONFIG.tiempos.foto || 20000);
         setInterval(() => this.safeExecute(() => this.updateClock(), "Bucle reloj"), 1000);
         setInterval(() => this.safeExecute(() => this.updateAllData(), "Bucle clima"), CONFIG.tiempos.climaAPI || 900000);
@@ -93,20 +84,34 @@ const MainContent = {
         }
     },
 
+    // REPARADO: Transición limpia sin acumulación de memoria para evitar cuelgues a los 2 días
     updateBackground() {
         const bgData = document.getElementById('bg-data');
         if (!bgData) {
             ErrorLogger.add("DOM_ERROR", "No se encontró el elemento id='bg-data' en el HTML.");
             return;
         }
-        bgData.style.opacity = '0';
-        setTimeout(() => {
-            if (this.fotos.length === 0) return;
-            const foto = this.fotos[this.currentIdx];
-            bgData.style.backgroundImage = `url('${CONFIG.rutaFotos}${foto}')`;
-            bgData.style.opacity = '1';
+        if (this.fotos.length === 0) return;
+
+        const foto = this.fotos[this.currentIdx];
+        const imgUrl = `${CONFIG.rutaFotos}${foto}`;
+
+        // Pre-carga de imagen en memoria para eliminar por completo el parpadeo
+        const imgPreload = new Image();
+        imgPreload.src = imgUrl;
+        imgPreload.onload = () => {
+            bgData.style.opacity = '0';
+            setTimeout(() => {
+                bgData.style.backgroundImage = `url('${imgUrl}')`;
+                bgData.style.opacity = '1';
+                this.currentIdx = (this.currentIdx + 1) % this.fotos.length;
+            }, 600); // Sincronizado perfectamente con el CSS
+        };
+        imgPreload.onerror = () => {
+            ErrorLogger.add("FILE_NOT_FOUND", `No se pudo precargar la foto: ${imgUrl}`);
+            // Si falla, saltamos a la siguiente para no congelar el bucle
             this.currentIdx = (this.currentIdx + 1) % this.fotos.length;
-        }, 1000);
+        };
     },
 
     updateClock() {
@@ -201,7 +206,7 @@ const MainContent = {
                     ...(FRASES_ANNOUNCER[serieElegida].genericos || [])
                 ];
                 if (this.datosCabanillas) {
-                    bolsaFrases.push(...(FRASES_ANNOUNCER[serieElegida].clima || []));
+                    bolasFrases.push(...(FRASES_ANNOUNCER[serieElegida].clima || []));
                 }
                 mensajeFinal = bolsaFrases[Math.floor(Math.random() * bolsaFrases.length)] || "...";
             }
@@ -244,7 +249,7 @@ const MainContent = {
                     img.src = rutaBackup;
                 } else {
                     ErrorLogger.add("CRITICAL_IMAGE", `Tampoco se localiza la imagen backup: ${rutaBackup}`);
-                    MainContent.hide(); // Cerramos para evitar bloqueos visuales
+                    MainContent.hide();
                 }
             };
 
@@ -290,6 +295,7 @@ const MainContent = {
         }
     },
 
+    // REPARADO: Control total para evitar que pinte iconos rotos si falla la API
     renderAll() {
         const data = this.datosCabanillas;
         if (!data) return;
@@ -299,21 +305,27 @@ const MainContent = {
         const iconEl = document.getElementById('main-icon');
         const container = document.getElementById('hourly-container');
 
-        if (tempEl) tempEl.innerText = data.current.temp + "ºC";
-        if (statusEl) statusEl.innerText = data.current.status.toUpperCase();
-        if (iconEl) {
+        if (tempEl && data.current && data.current.temp !== undefined) tempEl.innerText = data.current.temp + "ºC";
+        if (statusEl && data.current && data.current.status) statusEl.innerText = data.current.status.toUpperCase();
+        
+        if (iconEl && data.current && data.current.icon) {
             iconEl.innerHTML = (data.current.code === 1000) ? `<span style="color: #ffcc00;">${data.current.icon}</span>` : data.current.icon;
         }
         
         if (container && data.hourly) {
-            container.innerHTML = data.hourly.map(h => `
+            container.innerHTML = data.hourly.map(h => {
+                const hora = h.time || "--:--";
+                const temperatura = h.temp !== undefined ? h.temp : "--";
+                const icono = h.icon || "";
+                return `
                 <div class="h-item">
                     <div class="h-text-group">
-                        <span class="h-time">${h.time}</span>
-                        <span class="h-temp">${h.temp}º</span>
+                        <span class="h-time">${hora}</span>
+                        <span class="h-temp">${temperatura}º</span>
                     </div>
-                    <span class="h-icon">${h.icon}</span>
-                </div>`).join('');
+                    <span class="h-icon">${icono}</span>
+                </div>`;
+            }).join('');
         }
     },
 
@@ -323,10 +335,10 @@ const MainContent = {
     }
 };
 
-// 3. CAPTURADOR DE ERRORES GLOBAL (Captura cualquier fallo sintáctico o de recursos)
+// 3. CAPTURADOR DE ERRORES GLOBAL
 window.onerror = function(message, source, lineno, colno, error) {
     ErrorLogger.add("JS_CRITICAL_ERROR", message, `en ${source}:${lineno}`);
-    return false; // Deja que se muestre en consola también
+    return false;
 };
 
 // 4. DISPARADOR UNIFICADO
