@@ -7,7 +7,7 @@ const CONFIG = {
 
     // --- SECCIÓN DE ANUNCIANTES ---
     announcerSettings: {
-        active: true,            
+        active: false,            
         demoMode: false,         
         
         filtros: {
