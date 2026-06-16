@@ -1,98 +1,69 @@
-const CloudCache = {
-    canvases: [],
-    isInitialized: false,
+const CloudHelper = {
+    createPuffs() {
+        const puffsCount = 5 + Math.floor(Math.random() * 4); 
+        const puffs = [];
+        const baseRadius = 105 + Math.random() * 25; 
 
-    // Creamos las plantillas de nubes una sola vez
-    init(opacidad) {
-        for (let i = 0; i < 5; i++) {
-            const canvas = document.createElement('canvas');
-            // Canvas interno suficientemente grande para nubes hermosas
-            canvas.width = 800;  
-            canvas.height = 200;
-            const ictx = canvas.getContext('2d');
-            
-            const radius = 70 + Math.random() * 30;
-            const puffsCount = 6;
-            
-            ictx.save();
-            ictx.translate(400, 100); 
-            ictx.scale(4.0, 0.8); // Estiramiento horizontal
-            
-            for (let j = 0; j < puffsCount; j++) {
-                const ox = (Math.random() - 0.5) * 150;
-                const oy = (Math.random() - 0.5) * 40;
-                const rPuff = radius * (0.7 + Math.random() * 0.6);
-                
-                const g = ictx.createRadialGradient(ox, oy, 0, ox, oy, rPuff);
-                g.addColorStop(0, `rgba(255, 255, 255, ${opacidad})`);
-                g.addColorStop(1, "transparent");
-                
-                ictx.fillStyle = g;
-                ictx.beginPath();
-                ictx.arc(ox, oy, rPuff, 0, Math.PI * 2);
-                ictx.fill();
-            }
-            ictx.restore();
-            this.canvases.push(canvas);
+        for (let i = 0; i < puffsCount; i++) {
+            puffs.push({
+                ox: (Math.random() - 0.5) * (baseRadius * 2.2), 
+                oy: (Math.random() - 0.5) * (baseRadius * 0.4), 
+                r: baseRadius * (0.7 + Math.random() * 0.6)     
+            });
         }
-        this.isInitialized = true;
+        return puffs;
     }
 };
 
-Particle.prototype.specificReset = function(w, h) {
-    if (this.type === 'cloud' || this.type === 'nubes') {
-        const cfg = CONFIG.efectos;
-        
-        // Inicializar la caché si no existe
-        if (!CloudCache.isInitialized) {
-            CloudCache.init(cfg.nubesTransparencia || 0.1);
-        }
+// Lógica de inicialización de la nube
+function cloudReset(w, h) {
+    const cfg = CONFIG.efectos || {};
+    this.dir = Math.random() > 0.5 ? 1 : -1;
+    this.x = Math.random() * w; 
+    this.y = Math.random() * (h * (cfg.nubesAlturaLimite || 0.30));
+    this.speed = (this.dir === 1) ? (cfg.nubesVelocidadDerecha || 0.4) : -((cfg.nubesVelocidadIzquierda || 0.4));
+    this.op = (cfg.nubesTransparencia || 0.09) + 0.06; 
+    this.puffs = CloudHelper.createPuffs();
+}
 
-        this.dir = Math.random() > 0.5 ? 1 : -1;
-        
-        // Aparecer bien lejos para que entren suavemente
-        this.x = (this.dir === 1) ? -800 - (Math.random() * 1000) : w + 800 + (Math.random() * 1000);
-        
-        const limiteConfig = cfg.nubesAlturaLimite || 0.30;
-        this.y = Math.random() * (h * limiteConfig);
-        
-        this.speed = (this.dir === 1) ? 
-            (cfg.nubesVelocidadDerecha || 0.5) : 
-            -((cfg.nubesVelocidadIzquierda || 0.5));
-        
-        // Seleccionar una de nuestras 5 nubes maestras
-        this.cacheIdx = Math.floor(Math.random() * CloudCache.canvases.length);
-        
-        // ESCALA: Aquí es donde las hacemos grandes. 
-        // 2.0 a 3.5 las hará ocupar mucho espacio.
-        this.scale = 2.0 + Math.random() * 1.5; 
+// Lógica de dibujado de la nube
+function cloudDraw(ctx) {
+    if (!this.puffs) this.puffs = CloudHelper.createPuffs();
+
+    ctx.save();
+    this.puffs.forEach(puff => {
+        const cx = this.x + puff.ox;
+        const cy = this.y + puff.oy;
+
+        const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, puff.r);
+        g.addColorStop(0, `rgba(255, 255, 255, ${this.op})`);       
+        g.addColorStop(0.7, `rgba(240, 240, 245, ${this.op * 0.3})`); 
+        g.addColorStop(1, "transparent");                             
+
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(cx, cy, puff.r, 0, Math.PI * 2);
+        ctx.fill();
+    });
+    ctx.restore();
+
+    this.x += this.speed;
+
+    const cfg = CONFIG.efectos || {};
+    if (this.dir === 1 && this.x > this.canvas.width + 300) {
+        this.x = -300;
+        this.y = Math.random() * (this.canvas.height * (cfg.nubesAlturaLimite || 0.3));
+    } else if (this.dir === -1 && this.x < -300) {
+        this.x = this.canvas.width + 300;
+        this.y = Math.random() * (this.canvas.height * (cfg.nubesAlturaLimite || 0.3));
     }
-};
+}
 
-Particle.prototype.specificDraw = function(ctx) {
-    if (this.type === 'cloud' || this.type === 'nubes') {
-        const img = CloudCache.canvases[this.cacheIdx];
-        const drawW = img.width * this.scale;
-        const drawH = img.height * this.scale;
-
-        // Dibujo ultra-rápido de imagen
-        ctx.drawImage(
-            img, 
-            this.x - drawW / 2, 
-            this.y - drawH / 2, 
-            drawW, 
-            drawH
-        );
-
-        this.x += this.speed;
-        
-        // Lógica de re-entrada
-        if (this.dir === 1 && this.x > this.canvas.width + 1000) {
-            this.x = -1000;
-            this.y = Math.random() * (this.canvas.height * (CONFIG.efectos.nubesAlturaLimite || 0.3));
-        } else if (this.dir === -1 && this.x < -1000) {
-            this.x = this.canvas.width + 1000;
-            this.y = Math.random() * (this.canvas.height * (CONFIG.efectos.nubesAlturaLimite || 0.3));
-        }
-    }
-};
+// REGISTRO SEGURO: Nos apuntamos en el diccionario global
+if (typeof ParticleRegistry !== 'undefined') {
+    ParticleRegistry.resets['cloud'] = cloudReset;
+    ParticleRegistry.resets['nubes'] = cloudReset;
+    
+    ParticleRegistry.draws['cloud'] = cloudDraw;
+    ParticleRegistry.draws['nubes'] = cloudDraw;
+}

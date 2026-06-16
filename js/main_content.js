@@ -8,10 +8,12 @@ const ErrorLogger = {
         const logEntry = `[${timestamp}] [${type.toUpperCase()}] ${message} ${details}`;
         
         this.logs.push(logEntry);
-        if (this.logs.length > 100) this.logs.shift(); // Mantener solo los últimos 100
+        if (this.logs.length > 100) this.logs.shift();
         
         localStorage.setItem('dashboard_errors', JSON.stringify(this.logs));
-        console.log("%c LOG ", "background: #ffcc00; color: #000; font-weight: bold;", logEntry);
+        
+        // ESTO LE CHIVARÁ EL ERROR A LA TERMINAL SSH
+        console.error("DASHBOARD_ERROR_TRAP: " + logEntry);
     },
 
     downloadLog() {
@@ -44,10 +46,16 @@ const MainContent = {
     activeTimeout: null,
     funnyQueue: [],
     fotos: ["1.jpg", "2.jpg", "3.jpg", "4.jpg", "5.jpg", "6.jpg", "7.jpg", "8.jpg", "9.jpg", "10.jpg"],
+    
+    // VARIABLE NUEVA: Almacén para el sistema de reparto equitativo
+    sacoFotos: [],
 
     init() {
         console.log("%c MainContent: Iniciando de forma segura... ", "background: #222; color: #bada55; font-weight: bold;");
         
+        // Inicializamos el saco de fotos mezclado al arrancar
+        this.llenarYBarajarSaco();
+
         try {
             if (typeof WeatherEffects !== 'undefined') {
                 WeatherEffects.init('weather-canvas');
@@ -76,6 +84,21 @@ const MainContent = {
         this.scheduleNextCharacter(); 
     },
 
+    // FUNCIÓN NUEVA: Garantiza que todas las fotos se muestren una vez antes de repetir cualquier otra
+    llenarYBarajarSaco() {
+        if (this.fotos.length === 0) return;
+        
+        // Clonamos tu array original de fotos
+        this.sacoFotos = [...this.fotos];
+        
+        // Algoritmo Fisher-Yates (Mezcla perfecta y aleatoria)
+        for (let i = this.sacoFotos.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [this.sacoFotos[i], this.sacoFotos[j]] = [this.sacoFotos[j], this.sacoFotos[i]];
+        }
+        console.log(`| SISTEMA EQUITATIVO | Saco generado y barajado con ${this.sacoFotos.length} fotos.`);
+    },
+
     safeExecute(fn, contextName) {
         try {
             fn();
@@ -84,36 +107,37 @@ const MainContent = {
         }
     },
 
-    // REPARADO: Transición limpia sin acumulación de memoria para evitar cuelgues a los 2 días
     updateBackground() {
-        const bgData = document.getElementById('bg-data');
+        // Cambiado a 'bg-main' que es el id real de tu archivo CSS
+        const bgData = document.getElementById('bg-main');
         if (!bgData) {
-            ErrorLogger.add("DOM_ERROR", "No se encontró el elemento id='bg-data' en el HTML.");
+            ErrorLogger.add("DOM_ERROR", "No se encontró el elemento id='bg-main' en el HTML.");
             return;
         }
         if (this.fotos.length === 0) return;
 
-        const foto = this.fotos[this.currentIdx];
+        if (this.sacoFotos.length === 0) {
+            this.llenarYBarajarSaco();
+        }
+
+        const foto = this.sacoFotos.pop();
         const imgUrl = `${CONFIG.rutaFotos}${foto}`;
 
-        // Pre-carga de imagen en memoria para eliminar por completo el parpadeo
         const imgPreload = new Image();
         imgPreload.src = imgUrl;
         imgPreload.onload = () => {
             bgData.style.opacity = '0';
             setTimeout(() => {
-                bgData.style.backgroundImage = `url('${imgUrl}')`;
+                // Modificado para usar .src en lugar de backgroundImage, respetando tu CSS
+                bgData.src = imgUrl;
                 bgData.style.opacity = '1';
-                this.currentIdx = (this.currentIdx + 1) % this.fotos.length;
-            }, 600); // Sincronizado perfectamente con el CSS
+            }, 500); // Sincronizado con los 0.5s de tu css (.bg-main)
         };
         imgPreload.onerror = () => {
             ErrorLogger.add("FILE_NOT_FOUND", `No se pudo precargar la foto: ${imgUrl}`);
-            // Si falla, saltamos a la siguiente para no congelar el bucle
-            this.currentIdx = (this.currentIdx + 1) % this.fotos.length;
         };
     },
-
+    
     updateClock() {
         const d = new Date();
         const H = d.getHours();
@@ -206,7 +230,8 @@ const MainContent = {
                     ...(FRASES_ANNOUNCER[serieElegida].genericos || [])
                 ];
                 if (this.datosCabanillas) {
-                    bolasFrases.push(...(FRASES_ANNOUNCER[serieElegida].clima || []));
+                    // CORREGIDO: "bolasFrases" cambiado a "bolsaFrases" para evitar caídas
+                    bolsaFrases.push(...(FRASES_ANNOUNCER[serieElegida].clima || []));
                 }
                 mensajeFinal = bolsaFrases[Math.floor(Math.random() * bolsaFrases.length)] || "...";
             }
@@ -261,9 +286,15 @@ const MainContent = {
         }
     },
 
+    // MODIFICADO: Limpieza profunda de memoria al ocultar el personaje para evitar cuelgues
     hide() {
         const el = document.getElementById('hourly-announcer');
         if (el) el.classList.remove('announcer-visible');
+        
+        // Parche definitivo: Forzamos la descarga de la imagen de la RAM asignando un src vacío
+        const img = document.getElementById('announcer-img');
+        if (img) img.src = "";
+        
         this.activeTimeout = null;
     },
 
@@ -295,7 +326,6 @@ const MainContent = {
         }
     },
 
-    // REPARADO: Control total para evitar que pinte iconos rotos si falla la API
     renderAll() {
         const data = this.datosCabanillas;
         if (!data) return;

@@ -99,7 +99,21 @@ body, html {
     transition: opacity 0.5s ease-in-out; 
 }
 
-#weather-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; }
+#weather-canvas { 
+    position: fixed; 
+    top: 0; 
+    left: 0; 
+    width: 100vw !important; 
+    height: 100vh !important; 
+    z-index: 1; /* Justo encima de la foto, debajo del reloj */
+    pointer-events: none; 
+    
+    /* PARCHE DEFINITIVO: Forzamos transparencia total y eliminamos cualquier fondo del navegador */
+    background: transparent !important;
+    background-color: transparent !important;
+    border: none !important;
+    outline: none !important;
+}
 
 /* ==========================================================================
    4. UI SUPERIOR (RELOJ Y CLIMA ACTUAL)
