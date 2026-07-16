@@ -1,0 +1,28 @@
+=== Inicio del servicio de Marco de Fotos: Fri  3 Jul 09:04:15 CEST 2026 ===
+[Fri  3 Jul 09:04:16 CEST 2026] Iniciando Weather Web...
+
+(cog:83195): Cog-DRM-WARNING **: 09:04:24.653: Renderer 'modeset' does not support rotation 0 (0 degrees).
+
+** (WPEWebProcess:2): WARNING **: 09:05:21.918: Can't connect to a11y bus: Could not connect: No such file or directory
+Cog-Core-Message: 09:05:22.196: <file:///home/pi/web/index.html> Load started.
+Cog-Core-Message: 09:05:22.580: <file:///home/pi/web/index.html> Loading...
+Cog-Core-Message: 09:05:25.022: <file:///home/pi/web/index.html> Loaded successfully.
+=== Inicio del servicio de Marco de Fotos: Fri  3 Jul 09:06:02 CEST 2026 ===
+[Fri  3 Jul 09:06:03 CEST 2026] Iniciando Weather Web...
+
+(cog:83347): Cog-DRM-WARNING **: 09:06:10.201: Renderer 'modeset' does not support rotation 0 (0 degrees).
+
+** (WPEWebProcess:2): WARNING **: 09:06:55.506: Can't connect to a11y bus: Could not connect: No such file or directory
+Cog-Core-Message: 09:06:55.834: <file:///home/pi/web/index.html> Load started.
+Cog-Core-Message: 09:06:56.214: <file:///home/pi/web/index.html> Loading...
+Cog-Core-Message: 09:07:00.357: <file:///home/pi/web/index.html> Loaded successfully.
+=== Inicio del servicio de Marco de Fotos: Fri  3 Jul 09:05:20 CEST 2026 ===
+[Fri  3 Jul 09:05:21 CEST 2026] Iniciando Weather Web...
+error: XDG_RUNTIME_DIR is invalid or not set in the environment.
+
+(cog:548): Cog-DRM-WARNING **: 09:05:30.027: Renderer 'modeset' does not support rotation 0 (0 degrees).
+
+** (WPEWebProcess:2): WARNING **: 09:05:37.177: Can't connect to a11y bus: Could not connect: No such file or directory
+Cog-Core-Message: 09:05:37.311: <file:///home/pi/web/index.html> Load started.
+Cog-Core-Message: 09:05:37.665: <file:///home/pi/web/index.html> Loading...
+Cog-Core-Message: 09:05:42.348: <file:///home/pi/web/index.html> Loaded successfully.

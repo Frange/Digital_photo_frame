@@ -12,8 +12,8 @@ const ErrorLogger = {
         
         localStorage.setItem('dashboard_errors', JSON.stringify(this.logs));
         
-        // ESTO LE CHIVARÁ EL ERROR A LA TERMINAL SSH
-        console.error("DASHBOARD_ERROR_TRAP: " + logEntry);
+        // ESTO REBOTARÁ DIRECTAMENTE AL ARCHIVO /home/pi/dashboard_navegador.log GRACIAS AL NUEVO BASH
+        console.error(`DASHBOARD_ERROR_TRAP -> ${logEntry}`);
     },
 
     downloadLog() {
@@ -36,6 +36,15 @@ const ErrorLogger = {
         console.log("Historial de errores limpio.");
     }
 };
+
+window.onerror = function(message, source, lineno, colno, error) {
+    ErrorLogger.add("JS_CRITICAL_ERROR", message, `en ${source}:${lineno}:${colno}`);
+    return false; 
+};
+
+window.addEventListener('unhandledrejection', function(event) {
+    ErrorLogger.add("PROMISE_REJECTED", event.reason ? event.reason.message : "Error de red/asíncrono indeterminado");
+});
 
 // 2. CONTENIDO PRINCIPAL
 const MainContent = {
