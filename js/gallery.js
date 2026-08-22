@@ -11,7 +11,11 @@ const Gallery = {
         // 1. Cargar lista de archivos
         if (typeof LISTADO_GALERIA !== 'undefined' && LISTADO_GALERIA.length > 0) {
             CONFIG.files = LISTADO_GALERIA.filter(f => f.includes('.') && !f.includes('*'));
-            CONFIG.files.sort(() => Math.random() - 0.5); // Mezcla aleatoria
+            // Mezcla aleatoria (Fisher-Yates) para no repetir fotos en orden siempre igual
+            for (let i = CONFIG.files.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [CONFIG.files[i], CONFIG.files[j]] = [CONFIG.files[j], CONFIG.files[i]];
+            }
         } else {
             console.error("Gallery: LISTADO_GALERIA no encontrada.");
             return;
@@ -45,17 +49,26 @@ const Gallery = {
         this.container.innerHTML = ''; 
         let mediaElement = isVideo ? document.createElement('video') : document.createElement('img');
         
-        mediaElement.id = 'bg-main'; // Aplicamos tu ID de CSS
-        mediaElement.src = path;
-
+        mediaElement.id = 'bg-main'; // ID para el CSS
+        
         if (isVideo) {
             Object.assign(mediaElement, { autoplay: true, muted: true, playsInline: true });
+            mediaElement.src = path;
             mediaElement.onended = () => this.advanceIndexAndLoad();
+            mediaElement.onerror = () => {
+                console.error(`Error cargando vídeo: ${path}`);
+                this.advanceIndexAndLoad();
+            };
         } else {
             mediaElement.onload = () => {
-                const tiempo = (typeof CONFIG !== 'undefined' && CONFIG.tiempos) ? CONFIG.tiempos.foto : 15000;
+                const tiempo = (typeof CONFIG !== 'undefined' && CONFIG.tiempos) ? CONFIG.tiempos.foto : 20000;
                 this.photoTimer = setTimeout(() => this.advanceIndexAndLoad(), tiempo);
             };
+            mediaElement.onerror = () => {
+                console.error(`Error cargando imagen: ${path}`);
+                this.advanceIndexAndLoad();
+            };
+            mediaElement.src = path;
         }
         
         this.container.appendChild(mediaElement);
@@ -68,7 +81,6 @@ const Gallery = {
             countEl.innerText = `${this.currentIndex + 1} / ${CONFIG.files.length}`;
         }
         if (nameEl) {
-            // Limpiamos el nombre: quitamos extensión, guiones y "foto"
             let cleanName = currentFile.split('.')[0]
                                       .replace(/_/g, ' ')
                                       .replace(/-/g, ' ')

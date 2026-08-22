@@ -1,4 +1,4 @@
-// 1. DEFINICIÓN DEL LOGGER CON PERSISTENCIA LOCAL STORAGE
+// 1. DEFINICIÓN DEL LOGGER CON PERSISTENCIA LOCAL STORAGE Y SALIDA A TERMINAL
 const ErrorLogger = {
     logs: JSON.parse(localStorage.getItem('dashboard_errors')) || [],
     
@@ -37,13 +37,14 @@ const ErrorLogger = {
     }
 };
 
+// --- CAPTURADORES DE ERRORES GLOBALES ---
 window.onerror = function(message, source, lineno, colno, error) {
     ErrorLogger.add("JS_CRITICAL_ERROR", message, `en ${source}:${lineno}:${colno}`);
-    return false; 
+    return false;
 };
 
 window.addEventListener('unhandledrejection', function(event) {
-    ErrorLogger.add("PROMISE_REJECTED", event.reason ? event.reason.message : "Error de red/asíncrono indeterminado");
+    ErrorLogger.add("PROMISE_REJECTED", event.reason ? (event.reason.message || event.reason) : "Error de red/asíncrono indeterminado");
 });
 
 // 2. CONTENIDO PRINCIPAL
@@ -54,14 +55,22 @@ const MainContent = {
     nextCharacterTime: 0,
     activeTimeout: null,
     funnyQueue: [],
-    fotos: ["1.jpg", "2.jpg", "3.jpg", "4.jpg", "5.jpg", "6.jpg", "7.jpg", "8.jpg", "9.jpg", "10.jpg"],
     
-    // VARIABLE NUEVA: Almacén para el sistema de reparto equitativo
+    // Lista por defecto (se sobreescribe automáticamente con galeria.js si existe)
+    fotos: ["1.jpg", "2.jpg", "3.jpg", "4.jpg", "5.jpg"],
+    
+    // Almacén para el sistema de reparto equitativo
     sacoFotos: [],
 
     init() {
         console.log("%c MainContent: Iniciando de forma segura... ", "background: #222; color: #bada55; font-weight: bold;");
         
+        // Si galeria.js ha cargado LISTADO_GALERIA, lo usamos en lugar del array estático
+        if (typeof LISTADO_GALERIA !== 'undefined' && Array.isArray(LISTADO_GALERIA) && LISTADO_GALERIA.length > 0) {
+            this.fotos = LISTADO_GALERIA;
+            console.log(`| GALERÍA | Cargado LISTADO_GALERIA automático con ${this.fotos.length} fotos.`);
+        }
+
         // Inicializamos el saco de fotos mezclado al arrancar
         this.llenarYBarajarSaco();
 
@@ -85,22 +94,21 @@ const MainContent = {
         this.safeExecute(() => this.updateAllData(), "Clima inicial");
 
         // Intervalos de tiempo protegidos
-        setInterval(() => this.safeExecute(() => this.updateBackground(), "Bucle fondo"), CONFIG.tiempos.foto || 20000);
+        // setInterval(() => this.safeExecute(() => this.updateBackground(), "Bucle fondo"), (typeof CONFIG !== 'undefined' && CONFIG.tiempos && CONFIG.tiempos.foto) || 20000);
         setInterval(() => this.safeExecute(() => this.updateClock(), "Bucle reloj"), 1000);
-        setInterval(() => this.safeExecute(() => this.updateAllData(), "Bucle clima"), CONFIG.tiempos.climaAPI || 900000);
+        setInterval(() => this.safeExecute(() => this.updateAllData(), "Bucle clima"), (typeof CONFIG !== 'undefined' && CONFIG.tiempos && CONFIG.tiempos.climaAPI) || 900000);
         
         this.scheduleNextFunny();
         this.scheduleNextCharacter(); 
     },
 
-    // FUNCIÓN NUEVA: Garantiza que todas las fotos se muestren una vez antes de repetir cualquier otra
+    // Garantiza que todas las fotos se muestren una vez antes de repetir cualquier otra
     llenarYBarajarSaco() {
         if (this.fotos.length === 0) return;
         
-        // Clonamos tu array original de fotos
         this.sacoFotos = [...this.fotos];
         
-        // Algoritmo Fisher-Yates (Mezcla perfecta y aleatoria)
+        // Algoritmo Fisher-Yates
         for (let i = this.sacoFotos.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [this.sacoFotos[i], this.sacoFotos[j]] = [this.sacoFotos[j], this.sacoFotos[i]];
@@ -117,10 +125,10 @@ const MainContent = {
     },
 
     updateBackground() {
-        // Cambiado a 'bg-main' que es el id real de tu archivo CSS
-        const bgData = document.getElementById('bg-main');
+        /*
+        const bgData = document.getElementById('bg-main') || document.getElementById('bg-data');
         if (!bgData) {
-            ErrorLogger.add("DOM_ERROR", "No se encontró el elemento id='bg-main' en el HTML.");
+            ErrorLogger.add("DOM_ERROR", "No se encontró el elemento contenedor del fondo.");
             return;
         }
         if (this.fotos.length === 0) return;
@@ -130,21 +138,27 @@ const MainContent = {
         }
 
         const foto = this.sacoFotos.pop();
-        const imgUrl = `${CONFIG.rutaFotos}${foto}`;
+        const rutaBase = (typeof CONFIG !== 'undefined' && CONFIG.rutaFotos) ? CONFIG.rutaFotos : './fotos/';
+        const imgUrl = `${rutaBase}${foto}`;
 
         const imgPreload = new Image();
         imgPreload.src = imgUrl;
         imgPreload.onload = () => {
             bgData.style.opacity = '0';
             setTimeout(() => {
-                // Modificado para usar .src en lugar de backgroundImage, respetando tu CSS
-                bgData.src = imgUrl;
+                if (bgData.tagName.toLowerCase() === 'img') {
+                    bgData.src = imgUrl;
+                } else {
+                    bgData.style.backgroundImage = `url('${imgUrl}')`;
+                }
                 bgData.style.opacity = '1';
-            }, 500); // Sincronizado con los 0.5s de tu css (.bg-main)
+            }, 500);
         };
         imgPreload.onerror = () => {
             ErrorLogger.add("FILE_NOT_FOUND", `No se pudo precargar la foto: ${imgUrl}`);
         };
+        */
+       return ;
     },
     
     updateClock() {
@@ -160,7 +174,7 @@ const MainContent = {
         if (timeEl) timeEl.innerText = d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
         if (dateEl) dateEl.innerText = d.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
 
-        if (!CONFIG.announcerSettings || !CONFIG.announcerSettings.active) return;
+        if (typeof CONFIG === 'undefined' || !CONFIG.announcerSettings || !CONFIG.announcerSettings.active) return;
 
         if (CONFIG.announcerSettings.demoMode) {
             if (S % 15 === 0) {
@@ -239,7 +253,6 @@ const MainContent = {
                     ...(FRASES_ANNOUNCER[serieElegida].genericos || [])
                 ];
                 if (this.datosCabanillas) {
-                    // CORREGIDO: "bolasFrases" cambiado a "bolsaFrases" para evitar caídas
                     bolsaFrases.push(...(FRASES_ANNOUNCER[serieElegida].clima || []));
                 }
                 mensajeFinal = bolsaFrases[Math.floor(Math.random() * bolsaFrases.length)] || "...";
@@ -295,12 +308,11 @@ const MainContent = {
         }
     },
 
-    // MODIFICADO: Limpieza profunda de memoria al ocultar el personaje para evitar cuelgues
     hide() {
         const el = document.getElementById('hourly-announcer');
         if (el) el.classList.remove('announcer-visible');
         
-        // Parche definitivo: Forzamos la descarga de la imagen de la RAM asignando un src vacío
+        // Vaciamos la imagen para liberar espacio en memoria RAM
         const img = document.getElementById('announcer-img');
         if (img) img.src = "";
         
@@ -308,6 +320,7 @@ const MainContent = {
     },
 
     scheduleNextFunny() {
+        if (typeof CONFIG === 'undefined' || !CONFIG.announcerSettings) return;
         const freq = CONFIG.announcerSettings.frecuencias;
         const min = (freq.funnyMin || 5) * 60 * 1000;
         const max = (freq.funnyMax || 15) * 60 * 1000;
@@ -315,6 +328,7 @@ const MainContent = {
     },
 
     scheduleNextCharacter() {
+        if (typeof CONFIG === 'undefined' || !CONFIG.announcerSettings) return;
         const freq = CONFIG.announcerSettings.frecuencias;
         const min = (freq.charactersMin || 1) * 60 * 1000;
         const max = (freq.charactersMax || 10) * 60 * 1000;
@@ -374,13 +388,7 @@ const MainContent = {
     }
 };
 
-// 3. CAPTURADOR DE ERRORES GLOBAL
-window.onerror = function(message, source, lineno, colno, error) {
-    ErrorLogger.add("JS_CRITICAL_ERROR", message, `en ${source}:${lineno}`);
-    return false;
-};
-
-// 4. DISPARADOR UNIFICADO
+// 3. DISPARADOR UNIFICADO
 document.addEventListener('DOMContentLoaded', () => {
     MainContent.init();
 });
