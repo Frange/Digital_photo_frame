@@ -12,7 +12,6 @@ const ErrorLogger = {
         
         localStorage.setItem('dashboard_errors', JSON.stringify(this.logs));
         
-        // ESTO REBOTARÁ DIRECTAMENTE AL ARCHIVO /home/pi/dashboard_navegador.log GRACIAS AL NUEVO BASH
         console.error(`DASHBOARD_ERROR_TRAP -> ${logEntry}`);
     },
 
