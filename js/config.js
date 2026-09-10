@@ -5,6 +5,14 @@ const CONFIG = {
     showTopBanner: false,    
     showBottomBanner: false,  
 
+    // --- INTEGRACIÓN IMMICH V2.0 ---
+    immich: {
+        active: true, // Ponlo en false si quieres volver al modo fotos local
+        baseUrl: "http://192.168.1.X:2283", // IP local y puerto de tu servidor Immich
+        apiKey: "TU_API_KEY_AQUI",          // Clave creada en Immich (Settings -> API Keys)
+        albumId: ""                         // Deja vacío "" para ver todas las fotos, o pega el ID de un álbum
+    },
+    
     // --- SECCIÓN DE ANUNCIANTES ---
     announcerSettings: {
         active: false,            
@@ -46,7 +54,7 @@ const CONFIG = {
     tiempos: {
         foto: 20000,        
         ciudad: 3000,      
-        climaAPI: 15 * 60 * 1000, // 15 min (900000ms)
+        climaAPI: 20 * 60 * 1000, 
         noticias: 20000,
         demoEfecto: 20000   
     },

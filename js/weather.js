@@ -15,10 +15,10 @@ const WeatherService = {
     async getWeatherData() {
         const now = Date.now();
         const diezMinutos = 10 * 60 * 1000;
+        const unaHora = 60 * 60 * 1000;
 
-        // 1. Protección de caché para no gastar llaves innecesariamente
+        // Si tenemos datos de hace menos de 10 min, los usamos
         if (this.cachedData && (now - this.lastFetch < diezMinutos)) {
-            console.log("WeatherService: Usando caché (ahorrando API)");
             return this.cachedData;
         }
 
@@ -58,9 +58,15 @@ const WeatherService = {
             }
         }
 
-        // 3. Si llegamos aquí, todas las llaves han fallado
-        ErrorLogger.add("CRITICAL", "Todas las llaves de Tomorrow.io están agotadas o fallan.");
-        return this.cachedData; // Devolvemos lo último que tengamos aunque sea viejo
+        if (this.cachedData && (now - this.lastFetch < unaHora)) {
+            console.warn("Llaves agotadas. Usando caché reciente.");
+            return this.cachedData;
+        }
+
+        // Si el caché tiene MÁS de 1 hora, lo descartamos para no mostrar temperaturas falsas
+        console.error("Caché caducado y llaves agotadas.");
+        this.cachedData = null;
+        return null;
     },
 
     transformData(raw) {
