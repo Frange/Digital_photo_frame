@@ -15,7 +15,6 @@ IMMICH_URL = "http://192.168.1.11:2283"
 IMMICH_API_KEY = "dtB86uMq52qFuuvKOKboLdz6JAbZNkXPlyBLtakKgw"
 IMMICH_ALBUM_ID = "425241e5-16a8-4862-94c9-ec07f5a68565"
 IMMICH_REFRESH_SECONDS = 20
-IMMICH_TAKE = 1000
 CATALOG_FILE = "immich_data.json"
 WEB_ROOT = "/home/pi/web"
 
@@ -37,41 +36,54 @@ def immich_request(path, method="GET", body=None):
         return response.status, response.headers.get("Content-Type", ""), response.read()
 
 def search_immich():
-    log(f"IMMICH_SRV: Consultando assets del álbum {IMMICH_ALBUM_ID} via search/metadata...")
-    body = {
-        "take": IMMICH_TAKE,
-        "albumIds": [IMMICH_ALBUM_ID],
-        "isVisible": True
-    }
-    
-    try:
-        status, _, raw_data = immich_request("/api/search/metadata", method="POST", body=body)
-        data = json.loads(raw_data.decode("utf-8"))
-        
-        log(f"IMMICH_SRV: Respuesta HTTP exitosa. Procesando assets...")
-    except urllib.error.HTTPError as error:
-        error_body = ""
-        try:
-            error_body = error.read().decode("utf-8", errors="replace")
-        except Exception:
-            pass
-        log(f"IMMICH_SRV ERROR HTTP {error.code}: {error_body}")
-        raise RuntimeError(f"HTTP {error.code}: {error_body}")
-    except Exception as error:
-        log(f"IMMICH_SRV ERROR CONEXIÓN: {error}")
-        raise RuntimeError(f"No se pudo consultar Immich: {error}")
+    log(f"IMMICH_SRV: Consultando assets del álbum {IMMICH_ALBUM_ID} via search/metadata con paginación...")
+    all_raw_items = []
+    page = 1
+    take = 250  # Límite por página que acepta Immich
 
-    # Extracción segura desde la estructura de metadatos de Immich
-    raw_items = []
-    if isinstance(data, dict):
-        assets_container = data.get("assets", [])
-        if isinstance(assets_container, dict):
-            raw_items = assets_container.get("items", [])
-        elif isinstance(assets_container, list):
-            raw_items = assets_container
+    while True:
+        body = {
+            "page": page,
+            "take": take,
+            "albumIds": [IMMICH_ALBUM_ID],
+            "isVisible": True
+        }
+        try:
+            status, _, raw_data = immich_request("/api/search/metadata", method="POST", body=body)
+            data = json.loads(raw_data.decode("utf-8"))
+        except urllib.error.HTTPError as error:
+            error_body = ""
+            try:
+                error_body = error.read().decode("utf-8", errors="replace")
+            except Exception:
+                pass
+            log(f"IMMICH_SRV ERROR HTTP {error.code}: {error_body}")
+            raise RuntimeError(f"HTTP {error.code}: {error_body}")
+        except Exception as error:
+            log(f"IMMICH_SRV ERROR CONEXIÓN: {error}")
+            raise RuntimeError(f"No se pudo consultar Immich: {error}")
+
+        raw_items = []
+        if isinstance(data, dict):
+            assets_container = data.get("assets", [])
+            if isinstance(assets_container, dict):
+                raw_items = assets_container.get("items", [])
+            elif isinstance(assets_container, list):
+                raw_items = assets_container
+
+        if not raw_items:
+            break
+
+        all_raw_items.extend(raw_items)
+        log(f"IMMICH_SRV: Página {page} procesada. Total acumulado: {len(all_raw_items)} elementos...")
+
+        if len(raw_items) < take:
+            break
+
+        page += 1
 
     assets = []
-    for item in raw_items:
+    for item in all_raw_items:
         if isinstance(item, dict) and item.get("id"):
             asset_type = item.get("type", "IMAGE")
             assets.append({
@@ -200,11 +212,11 @@ class ReusableThreadingTCPServer(socketserver.ThreadingTCPServer):
 if __name__ == "__main__":
     os.chdir(WEB_ROOT)
     log("==========================================")
-    log("   SERVIDOR DASHBOARD + IMMICH (ÁLBUM)")
+    log("    SERVIDOR DASHBOARD + IMMICH (ÁLBUM)")
     log("==========================================")
     log(f"Web: {WEB_ROOT} | Puerto: {PORT}")
-    
-    clean_and_prepare_catalog()
+
+    clean_and_prev_catalog = clean_and_prepare_catalog()
     threading.Thread(target=sync_immich, daemon=True).start()
 
     with ReusableThreadingTCPServer(("", PORT), DashboardHandler) as httpd:
