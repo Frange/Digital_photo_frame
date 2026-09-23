@@ -83,20 +83,25 @@ SERVER_PID=$!
 
 echo "[$(date)] server.py iniciado."
 echo "[$(date)] PID servidor: $SERVER_PID"
-echo "[$(date)] Esperando al servidor HTTP..."
+echo "[$(date)] Esperando a que el servidor descargue el catálogo de Immich..."
 
 SERVER_READY=0
-for i in $(seq 1 20); do
-    if curl --silent --max-time 1 "http://127.0.0.1:${PORT}/api/immich/status" >/dev/null 2>&1; then
+for i in $(seq 1 30); do
+    STATUS_JSON=$(curl --silent --max-time 2 "http://127.0.0.1:${PORT}/api/immich/status")
+    COUNT=$(echo "$STATUS_JSON" | grep -o '"count":[0-9]*' | grep -o '[0-9]*')
+    
+    if [ ! -z "$COUNT" ] && [ "$COUNT" -gt 0 ]; then
+        echo "[$(date)] ¡Catálogo listo con $COUNT elementos!"
         SERVER_READY=1
         break
     fi
-    sleep 1
+    echo "[$(date)] Esperando sincronización de Immich (intento $i/30)..."
+    sleep 2
 done
 
 if [ "$SERVER_READY" -ne 1 ]; then
     echo
-    echo "ERROR: El servidor Python no responde."
+    echo "ERROR: El servidor Python no sincronizó los datos de Immich a tiempo."
     echo "Comprueba:"
     echo
     echo "    tail -100 $LOG_FILE"
@@ -104,7 +109,7 @@ if [ "$SERVER_READY" -ne 1 ]; then
     exit 1
 fi
 
-echo "[$(date)] Servidor HTTP funcionando."
+echo "[$(date)] Servidor HTTP y catálogo funcionando."
 echo "[$(date)] Comprobando Immich..."
 
 IMMICH_STATUS=$(curl --silent --max-time 10 "http://127.0.0.1:${PORT}/api/immich/status")
