@@ -125,7 +125,7 @@ def clean_and_prepare_catalog():
             log(f"IMMICH_SRV ERROR al eliminar json anterior: {error}")
 
 def get_immich_thumbnail(asset_id):
-    return immich_request(f"/api/assets/{asset_id}/original", method="GET")
+    return immich_request(f"/api/assets/{asset_id}/thumbnail?size=preview", method="GET")
 
 class DashboardHandler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):

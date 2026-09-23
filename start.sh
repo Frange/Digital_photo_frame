@@ -1,17 +1,5 @@
 #!/bin/bash
 
-# 1. Matar procesos
-sudo pkill -9 -f "cog"
-sudo pkill -9 -f "WPE"
-sudo pkill -9 -f "server.py"
-sudo fuser -k 8080/tcp
-
-# 2. Borrar TODO rastro de caché, estado y datos locales de Cog/WPE
-rm -rf ~/.cache/cog ~/.cache/wpewebkit ~/.local/share/cog ~/.local/share/wpewebkit ~/.config/cog ~/.config/wpewebkit 2>/dev/null
-
-# 3. Borrar ficheros temporales del sistema
-rm -f /tmp/start_marco.pid /tmp/runtime-pi/* 2>/dev/null
-
 if [ -t 0 ]; then
     nohup "$0" "$@" >/dev/null 2>&1 &
     echo "Servidor iniciado en segundo plano."
@@ -130,13 +118,9 @@ echo " Iniciando navegador Cog"
 echo "============================================================"
 echo
 
-# Limpiar caché persistente de Cog/WPE para forzar la lectura del código nuevo
-rm -rf ~/.cache/cog ~/.cache/wpewebkit ~/.local/share/cog ~/.local/share/wpewebkit 2>/dev/null
-
 while true; do
     echo "[$(date)] Iniciando Cog..."
-    # Se añade un parámetro de tiempo dinámico (?nocache=...) para evitar que el navegador guarde la página en búfer
-    cog "http://localhost:${PORT}/index.html?nocache=$(date +%s)"
+    cog "http://localhost:${PORT}/index.html"
     EXIT_CODE=$?
     echo
     echo "[$(date)] Cog finalizó."
