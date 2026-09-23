@@ -2,7 +2,9 @@ const GalleryImmich = {
     currentIndex: 0,
     container: null,
     photoTimer: null,
+    statusTimer: null,
     assets: [],
+    initialCount: null,
 
     async init() {
         console.log("==> [IMMICH] Inicializando galería de Immich...");
@@ -19,7 +21,7 @@ const GalleryImmich = {
             return;
         }
 
-        console.log(`==> [IMMICH] Iniciando carrusel con ${this.assets.length} elementos.`);
+        console.log(`==> [IMMICH] Iniciando carrusel aleatorio con ${this.assets.length} elementos.`);
         this.updateBackground();
 
         // CONDICIÓN ANTI-PARPADEO: Si solo hay 1 foto, no programamos intervalos
@@ -34,6 +36,9 @@ const GalleryImmich = {
         } else {
             console.log("==> [IMMICH] Solo hay 1 elemento. Manteniendo imagen estática sin parpadeos.");
         }
+
+        // Programar comprobación de cambios en el álbum cada 5 minutos
+        this.startStatusChecker();
     },
 
     async loadAssets() {
@@ -45,12 +50,52 @@ const GalleryImmich = {
             const data = await response.json();
             let rawAssets = Array.isArray(data) ? data : (data && Array.isArray(data.assets) ? data.assets : []);
 
-            this.assets = rawAssets.filter(asset => asset && (asset.type === 'IMAGE' || asset.type === 'VIDEO') && asset.id);
-            return this.assets.length > 0;
+            let filtered = rawAssets.filter(asset => asset && (asset.type === 'IMAGE' || asset.type === 'VIDEO') && asset.id);
+            
+            if (filtered.length > 0) {
+                this.initialCount = filtered.length;
+                // Reiniciamos siempre el índice a 0 al cargar/barajar por primera vez o al refrescar
+                this.currentIndex = 0;
+                // Algoritmo Fisher-Yates para barajar las fotos de forma aleatoria real
+                this.assets = this.shuffleArray(filtered);
+                return true;
+            }
+            return false;
         } catch (error) {
             console.error("==> [IMMICH] EXCEPCIÓN: " + error.message);
             return false;
         }
+    },
+
+    shuffleArray(array) {
+        let currentIndex = array.length, randomIndex;
+        while (currentIndex !== 0) {
+            randomIndex = Math.floor(Math.random() * currentIndex);
+            currentIndex--;
+            [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+        }
+        return array;
+    },
+
+    startStatusChecker() {
+        if (this.statusTimer) clearInterval(this.statusTimer);
+        // Comprueba cada 5 minutos (300000 ms) si el número de fotos en el servidor ha cambiado
+        this.statusTimer = setInterval(async () => {
+            try {
+                const res = await fetch(`/api/immich/status?_=${Date.now()}`, { method: "GET", cache: "no-store" });
+                if (res.ok) {
+                    const statusData = await res.json();
+                    if (statusData && typeof statusData.count === 'number') {
+                        if (this.initialCount !== null && statusData.count !== this.initialCount) {
+                            console.log(`==> [IMMICH] ¡Cambios detectados en el álbum! (Anterior: ${this.initialCount}, Nuevo: ${statusData.count}). Recargando y barajando desde el inicio...`);
+                            location.reload();
+                        }
+                    }
+                }
+            } catch (e) {
+                console.log("==> [IMMICH] Error comprobando estado del álbum: " + e.message);
+            }
+        }, 300000);
     },
 
     showError() {
