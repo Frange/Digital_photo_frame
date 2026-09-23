@@ -10,7 +10,10 @@ const CONFIG = {
         active: true, // Ponlo en false si quieres volver al modo fotos local
         baseUrl: "http://192.168.1.8:2283", // IP local y puerto de tu servidor Immich
         apiKey: "IMk2jvDwBiQblf8zF79gAGN0LjlqMV0UVguAtkI",          // Clave creada en Immich (Settings -> API Keys)
-        albumId: ""                         // Deja vacío "" para ver todas las fotos, o pega el ID de un álbum
+        //albumId: "",                         // Deja vacío "" para ver todas las fotos, o pega el ID de un álbum
+        //tagId: "d244172f-3a27-48da-bbe1-a45f22a38069",
+        albumId: "8a5c5d58-99eb-4c18-aaa4-a2d696517c85",
+        tagId: ""
     },
     
     // --- SECCIÓN DE ANUNCIANTES ---

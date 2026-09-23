@@ -1,4 +1,6 @@
-// 1. DEFINICIÓN DEL LOGGER CON PERSISTENCIA LOCAL STORAGE Y SALIDA A TERMINAL
+// ==========================================
+// REGISTRO DE ERRORES LOCAL (PERSISTENCIA)
+// ==========================================
 const ErrorLogger = {
     logs: JSON.parse(localStorage.getItem('dashboard_errors')) || [],
     
@@ -11,13 +13,12 @@ const ErrorLogger = {
         if (this.logs.length > 100) this.logs.shift();
         
         localStorage.setItem('dashboard_errors', JSON.stringify(this.logs));
-        
         console.error(`DASHBOARD_ERROR_TRAP -> ${logEntry}`);
     },
 
     downloadLog() {
         if (this.logs.length === 0) {
-            alert("No hay errores registrados en el LocalStorage.");
+            alert("No hay errores registrados en LocalStorage.");
             return;
         }
         const now = new Date();
@@ -32,21 +33,13 @@ const ErrorLogger = {
     clear() {
         this.logs = [];
         localStorage.removeItem('dashboard_errors');
-        console.log("Historial de errores limpio.");
+        console.log("Historial de errores borrado.");
     }
 };
 
-// --- CAPTURADORES DE ERRORES GLOBALES ---
-window.onerror = function(message, source, lineno, colno, error) {
-    ErrorLogger.add("JS_CRITICAL_ERROR", message, `en ${source}:${lineno}:${colno}`);
-    return false;
-};
-
-window.addEventListener('unhandledrejection', function(event) {
-    ErrorLogger.add("PROMISE_REJECTED", event.reason ? (event.reason.message || event.reason) : "Error de red/asíncrono indeterminado");
-});
-
-// 2. CONTENIDO PRINCIPAL
+// ==========================================
+// CONTROLADOR PRINCIPAL DEL DASHBOARD
+// ==========================================
 const MainContent = {
     currentIdx: 0,
     datosCabanillas: null,
@@ -55,22 +48,16 @@ const MainContent = {
     activeTimeout: null,
     funnyQueue: [],
     
-    // Lista por defecto (se sobreescribe automáticamente con galeria.js si existe)
     fotos: ["1.jpg", "2.jpg", "3.jpg", "4.jpg", "5.jpg"],
-    
-    // Almacén para el sistema de reparto equitativo
     sacoFotos: [],
 
     init() {
-        console.log("%c MainContent: Iniciando de forma segura... ", "background: #222; color: #bada55; font-weight: bold;");
+        console.log("==> MainContent: Inicializando interfaz...");
         
-        // Si galeria.js ha cargado LISTADO_GALERIA, lo usamos en lugar del array estático
         if (typeof LISTADO_GALERIA !== 'undefined' && Array.isArray(LISTADO_GALERIA) && LISTADO_GALERIA.length > 0) {
             this.fotos = LISTADO_GALERIA;
-            console.log(`| GALERÍA | Cargado LISTADO_GALERIA automático con ${this.fotos.length} fotos.`);
         }
 
-        // Inicializamos el saco de fotos mezclado al arrancar
         this.llenarYBarajarSaco();
 
         try {
@@ -81,19 +68,9 @@ const MainContent = {
             ErrorLogger.add("CRITICAL_CANVAS", "Fallo al iniciar efectos visuales", e.message);
         }
 
-        try {
-            if (typeof Gallery !== 'undefined') Gallery.init();
-        } catch(e) {
-            ErrorLogger.add("GALLERY_ERROR", "Fallo en Gallery", e.message);
-        }
-
-        // Ejecuciones iniciales seguras
-        this.safeExecute(() => this.updateBackground(), "Fondo inicial");
         this.safeExecute(() => this.updateClock(), "Reloj inicial");
         this.safeExecute(() => this.updateAllData(), "Clima inicial");
 
-        // Intervalos de tiempo protegidos
-        // setInterval(() => this.safeExecute(() => this.updateBackground(), "Bucle fondo"), (typeof CONFIG !== 'undefined' && CONFIG.tiempos && CONFIG.tiempos.foto) || 20000);
         setInterval(() => this.safeExecute(() => this.updateClock(), "Bucle reloj"), 1000);
         setInterval(() => this.safeExecute(() => this.updateAllData(), "Bucle clima"), (typeof CONFIG !== 'undefined' && CONFIG.tiempos && CONFIG.tiempos.climaAPI) || 900000);
         
@@ -101,18 +78,13 @@ const MainContent = {
         this.scheduleNextCharacter(); 
     },
 
-    // Garantiza que todas las fotos se muestren una vez antes de repetir cualquier otra
     llenarYBarajarSaco() {
         if (this.fotos.length === 0) return;
-        
         this.sacoFotos = [...this.fotos];
-        
-        // Algoritmo Fisher-Yates
         for (let i = this.sacoFotos.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [this.sacoFotos[i], this.sacoFotos[j]] = [this.sacoFotos[j], this.sacoFotos[i]];
         }
-        console.log(`| SISTEMA EQUITATIVO | Saco generado y barajado con ${this.sacoFotos.length} fotos.`);
     },
 
     safeExecute(fn, contextName) {
@@ -124,40 +96,7 @@ const MainContent = {
     },
 
     updateBackground() {
-        /*
-        const bgData = document.getElementById('bg-main') || document.getElementById('bg-data');
-        if (!bgData) {
-            ErrorLogger.add("DOM_ERROR", "No se encontró el elemento contenedor del fondo.");
-            return;
-        }
-        if (this.fotos.length === 0) return;
-
-        if (this.sacoFotos.length === 0) {
-            this.llenarYBarajarSaco();
-        }
-
-        const foto = this.sacoFotos.pop();
-        const rutaBase = (typeof CONFIG !== 'undefined' && CONFIG.rutaFotos) ? CONFIG.rutaFotos : './fotos/';
-        const imgUrl = `${rutaBase}${foto}`;
-
-        const imgPreload = new Image();
-        imgPreload.src = imgUrl;
-        imgPreload.onload = () => {
-            bgData.style.opacity = '0';
-            setTimeout(() => {
-                if (bgData.tagName.toLowerCase() === 'img') {
-                    bgData.src = imgUrl;
-                } else {
-                    bgData.style.backgroundImage = `url('${imgUrl}')`;
-                }
-                bgData.style.opacity = '1';
-            }, 500);
-        };
-        imgPreload.onerror = () => {
-            ErrorLogger.add("FILE_NOT_FOUND", `No se pudo precargar la foto: ${imgUrl}`);
-        };
-        */
-       return ;
+        return; 
     },
     
     updateClock() {
@@ -177,7 +116,6 @@ const MainContent = {
 
         if (CONFIG.announcerSettings.demoMode) {
             if (S % 15 === 0) {
-                console.log("| ANNOUNCER | Salto Modo Demo");
                 this.show('characters');
             }
             return; 
@@ -215,9 +153,8 @@ const MainContent = {
     show(type, manualMessage = "") {
         try {
             if (typeof FRASES_ANNOUNCER === 'undefined') {
-                throw new Error("FRASES_ANNOUNCER no está cargado.");
+                throw new Error("FRASES_ANNOUNCER no está definido.");
             }
-            console.log(`| ANNOUNCER | Mostrando: ${type}`);
             const filtros = CONFIG.announcerSettings.filtros;
             let seriesDisponibles = [];
             
@@ -294,7 +231,7 @@ const MainContent = {
                 if (img.src !== rutaBackup) {
                     img.src = rutaBackup;
                 } else {
-                    ErrorLogger.add("CRITICAL_IMAGE", `Tampoco se localiza la imagen backup: ${rutaBackup}`);
+                    ErrorLogger.add("CRITICAL_IMAGE", `Sin imagen de respaldo: ${rutaBackup}`);
                     MainContent.hide();
                 }
             };
@@ -303,18 +240,15 @@ const MainContent = {
             if (this.activeTimeout) clearTimeout(this.activeTimeout);
             this.activeTimeout = setTimeout(() => this.hide(), duracion);
         } catch(err) {
-            ErrorLogger.add("RENDER_SHOW_ERROR", "Fallo crítico en función show", err.message);
+            ErrorLogger.add("RENDER_SHOW_ERROR", "Fallo crítico en show", err.message);
         }
     },
 
     hide() {
         const el = document.getElementById('hourly-announcer');
         if (el) el.classList.remove('announcer-visible');
-        
-        // Vaciamos la imagen para liberar espacio en memoria RAM
         const img = document.getElementById('announcer-img');
         if (img) img.src = "";
-        
         this.activeTimeout = null;
     },
 
@@ -333,12 +267,11 @@ const MainContent = {
         const max = (freq.charactersMax || 10) * 60 * 1000;
         const delay = Math.floor(Math.random() * (max - min + 1)) + min;
         this.nextCharacterTime = Date.now() + delay;
-        console.log(`| ANNOUNCER | Próximo personaje en ${Math.round(delay/60000)} min.`);
     },
 
     async updateAllData() {
         if (typeof WeatherService === 'undefined') {
-            ErrorLogger.add("SERVICE_MISSING", "Falta el script weather.js");
+            ErrorLogger.add("SERVICE_MISSING", "Script weather.js no encontrado");
             return;
         }
         const data = await WeatherService.getWeatherData();
@@ -387,7 +320,6 @@ const MainContent = {
     }
 };
 
-// 3. DISPARADOR UNIFICADO
 document.addEventListener('DOMContentLoaded', () => {
     MainContent.init();
 });

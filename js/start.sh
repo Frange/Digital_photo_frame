@@ -12,7 +12,7 @@ fi
 PIDFILE="/tmp/start_marco.pid"
 LOG_FILE="/home/pi/dashboard_navegador.log"
 WEB_DIR="/home/pi/web"
-SERVER_SCRIPT="/home/pi/server.py"
+SERVER_SCRIPT="/home/pi/web/server.py"
 PORT=8080
 
 if [ -f "$PIDFILE" ] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null; then
@@ -39,7 +39,6 @@ cleanup() {
         kill -9 "$SERVER_PID" 2>/dev/null
     fi
     sudo pkill -9 -f "server.py" 2>/dev/null
-    sudo fuser -k 8080/tcp 2>/dev/null
     if [ -f "$PIDFILE" ]; then
         rm -f "$PIDFILE"
     fi
@@ -62,7 +61,6 @@ echo "[$(date)] Limpiando procesos anteriores..."
 sudo pkill -9 -f "cog" 2>/dev/null
 sudo pkill -9 -f "WPE" 2>/dev/null
 sudo pkill -9 -f "server.py" 2>/dev/null
-sudo fuser -k 8080/tcp 2>/dev/null
 sleep 1
 
 if [ ! -d "$WEB_DIR" ]; then

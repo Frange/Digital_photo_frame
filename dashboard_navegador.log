@@ -1,28 +1,72 @@
-=== Inicio del servicio de Marco de Fotos: Fri  3 Jul 09:04:15 CEST 2026 ===
-[Fri  3 Jul 09:04:16 CEST 2026] Iniciando Weather Web...
 
-(cog:83195): Cog-DRM-WARNING **: 09:04:24.653: Renderer 'modeset' does not support rotation 0 (0 degrees).
+============================================================
+ Inicio del servicio de Marco de Fotos
+Wed 23 Sep 10:45:14 CEST 2026
+============================================================
 
-** (WPEWebProcess:2): WARNING **: 09:05:21.918: Can't connect to a11y bus: Could not connect: No such file or directory
-Cog-Core-Message: 09:05:22.196: <file:///home/pi/web/index.html> Load started.
-Cog-Core-Message: 09:05:22.580: <file:///home/pi/web/index.html> Loading...
-Cog-Core-Message: 09:05:25.022: <file:///home/pi/web/index.html> Loaded successfully.
-=== Inicio del servicio de Marco de Fotos: Fri  3 Jul 09:06:02 CEST 2026 ===
-[Fri  3 Jul 09:06:03 CEST 2026] Iniciando Weather Web...
+[Wed 23 Sep 10:45:14 CEST 2026] Limpiando procesos anteriores...
+/home/pi/start.sh: line 62:   527 Killed                  sudo pkill -9 -f "cog" 2> /dev/null
+/home/pi/start.sh: line 63:   538 Killed                  sudo pkill -9 -f "WPE" 2> /dev/null
+/home/pi/start.sh: line 64:   541 Killed                  sudo pkill -9 -f "server.py" 2> /dev/null
+[Wed 23 Sep 10:45:15 CEST 2026] Iniciando servidor Dashboard + Immich...
+[Wed 23 Sep 10:45:15 CEST 2026] server.py iniciado.
+[Wed 23 Sep 10:45:15 CEST 2026] PID servidor: 559
+[Wed 23 Sep 10:45:15 CEST 2026] Esperando al servidor HTTP...
+[2026-09-23 10:45:16] ==========================================
+[2026-09-23 10:45:16]    SERVIDOR DASHBOARD + IMMICH (ÁLBUM)
+[2026-09-23 10:45:16] ==========================================
+[2026-09-23 10:45:16] Web: /home/pi/web | Puerto: 8080
+[2026-09-23 10:45:16] IMMICH_SRV: Archivo json anterior eliminado correctamente.
+[2026-09-23 10:45:16] IMMICH_SRV: Consultando assets del álbum 425241e5-16a8-4862-94c9-ec07f5a68565 via search/metadata...
+[2026-09-23 10:45:16] Servidor escuchando en http://0.0.0.0:8080
+[2026-09-23 10:45:16] IMMICH_SRV ERROR CONEXIÓN: <urlopen error [Errno 101] Network is unreachable>
+[2026-09-23 10:45:16] IMMICH_SRV ERROR en bucle de sinc: No se pudo consultar Immich: <urlopen error [Errno 101] Network is unreachable>
+[2026-09-23 10:45:16] HTTP_REQ -> "GET /api/immich/status HTTP/1.1" 200 -
+[Wed 23 Sep 10:45:16 CEST 2026] Servidor HTTP funcionando.
+[Wed 23 Sep 10:45:17 CEST 2026] Comprobando Immich...
+[2026-09-23 10:45:17] HTTP_REQ -> "GET /api/immich/status HTTP/1.1" 200 -
+[Wed 23 Sep 10:45:17 CEST 2026] Estado Immich:
+{"ok": false, "count": 0, "updatedAt": null, "error": "No se pudo consultar Immich: <urlopen error [Errno 101] Network is unreachable>", "albumId": "425241e5-16a8-4862-94c9-ec07f5a68565"}
 
-(cog:83347): Cog-DRM-WARNING **: 09:06:10.201: Renderer 'modeset' does not support rotation 0 (0 degrees).
+============================================================
+ Iniciando navegador Cog
+============================================================
 
-** (WPEWebProcess:2): WARNING **: 09:06:55.506: Can't connect to a11y bus: Could not connect: No such file or directory
-Cog-Core-Message: 09:06:55.834: <file:///home/pi/web/index.html> Load started.
-Cog-Core-Message: 09:06:56.214: <file:///home/pi/web/index.html> Loading...
-Cog-Core-Message: 09:07:00.357: <file:///home/pi/web/index.html> Loaded successfully.
-=== Inicio del servicio de Marco de Fotos: Fri  3 Jul 09:05:20 CEST 2026 ===
-[Fri  3 Jul 09:05:21 CEST 2026] Iniciando Weather Web...
-error: XDG_RUNTIME_DIR is invalid or not set in the environment.
+[Wed 23 Sep 10:45:17 CEST 2026] Iniciando Cog...
 
-(cog:548): Cog-DRM-WARNING **: 09:05:30.027: Renderer 'modeset' does not support rotation 0 (0 degrees).
+(cog:615): Cog-DRM-WARNING **: 10:45:23.922: Renderer 'modeset' does not support rotation 0 (0 degrees).
 
-** (WPEWebProcess:2): WARNING **: 09:05:37.177: Can't connect to a11y bus: Could not connect: No such file or directory
-Cog-Core-Message: 09:05:37.311: <file:///home/pi/web/index.html> Load started.
-Cog-Core-Message: 09:05:37.665: <file:///home/pi/web/index.html> Loading...
-Cog-Core-Message: 09:05:42.348: <file:///home/pi/web/index.html> Loaded successfully.
+** (WPEWebProcess:2): WARNING **: 10:45:28.356: Can't connect to a11y bus: Could not connect: No such file or directory
+Cog-Core-Message: 10:45:28.533: <http://localhost:8080/index.html> Load started.
+[2026-09-23 10:45:28] HTTP_REQ -> "GET /index.html HTTP/1.1" 304 -
+Cog-Core-Message: 10:45:29.010: <http://localhost:8080/index.html> Loading...
+[2026-09-23 10:45:29] HTTP_REQ -> "GET /js/gallery_immich.js?v=999 HTTP/1.1" 304 -
+[2026-09-23 10:45:29] HTTP_REQ -> "GET /js/gallery_local.js?v=999 HTTP/1.1" 304 -
+[2026-09-23 10:45:29] HTTP_REQ -> "GET /js/gallery.js?v=999 HTTP/1.1" 304 -
+[2026-09-23 10:45:30] JS_REMOTE -> [JS_LOG] ==> MainContent: Inicializando interfaz...
+[2026-09-23 10:45:30] NAVEGADOR_LOG -> "GET /?JS_LOG=%5BJS_LOG%5D%20%3D%3D%3E%20MainContent%3A%20Inicializando%20interfaz... HTTP/1.1" 204 -
+[2026-09-23 10:45:30] JS_REMOTE -> [JS_LOG] WeatherEffects: Desactivados por CONFIG para ahorrar recursos.
+[2026-09-23 10:45:30] NAVEGADOR_LOG -> "GET /?JS_LOG=%5BJS_LOG%5D%20WeatherEffects%3A%20Desactivados%20por%20CONFIG%20para%20ahorrar%20recursos. HTTP/1.1" 204 -
+[2026-09-23 10:45:30] JS_REMOTE -> [JS_LOG] WeatherService: Intentando con Llave #1
+[2026-09-23 10:45:30] NAVEGADOR_LOG -> "GET /?JS_LOG=%5BJS_LOG%5D%20WeatherService%3A%20Intentando%20con%20Llave%20%231 HTTP/1.1" 204 -
+[2026-09-23 10:45:30] JS_REMOTE -> [JS_LOG] ==> [DISPATCHER] Analizando configuración de galería...
+[2026-09-23 10:45:30] NAVEGADOR_LOG -> "GET /?JS_LOG=%5BJS_LOG%5D%20%3D%3D%3E%20%5BDISPATCHER%5D%20Analizando%20configuraci%C3%B3n%20de%20galer%C3%ADa... HTTP/1.1" 204 -
+[2026-09-23 10:45:30] JS_REMOTE -> [JS_LOG] ==> [DISPATCHER] Configuración detectada: MODO IMMICH. Lanzando GalleryImmich.
+[2026-09-23 10:45:30] NAVEGADOR_LOG -> "GET /?JS_LOG=%5BJS_LOG%5D%20%3D%3D%3E%20%5BDISPATCHER%5D%20Configuraci%C3%B3n%20detectada%3A%20MODO%20IMMICH.%20Lanzando%20GalleryImmich. HTTP/1.1" 204 -
+[2026-09-23 10:45:30] JS_REMOTE -> [JS_LOG] ==> [IMMICH] Inicializando galería de Immich...
+[2026-09-23 10:45:30] NAVEGADOR_LOG -> "GET /?JS_LOG=%5BJS_LOG%5D%20%3D%3D%3E%20%5BIMMICH%5D%20Inicializando%20galer%C3%ADa%20de%20Immich... HTTP/1.1" 204 -
+[2026-09-23 10:45:30] JS_REMOTE -> [JS_LOG] ==> [IMMICH] Solicitando catálogo a /api/immich/photos ...
+[2026-09-23 10:45:30] NAVEGADOR_LOG -> "GET /?JS_LOG=%5BJS_LOG%5D%20%3D%3D%3E%20%5BIMMICH%5D%20Solicitando%20cat%C3%A1logo%20a%20%2Fapi%2Fimmich%2Fphotos%20... HTTP/1.1" 204 -
+[2026-09-23 10:45:30] API: Sirviendo /api/immich/photos con 0 assets.
+[2026-09-23 10:45:30] HTTP_REQ -> "GET /api/immich/photos?_=1790153130897 HTTP/1.1" 200 -
+Cog-Core-Message: 10:45:31.464: <http://localhost:8080/index.html> Loaded successfully.
+[2026-09-23 10:45:31] JS_REMOTE -> [JS_ERR] ==> [IMMICH] ERROR: No se pudieron cargar elementos de Immich.
+[2026-09-23 10:45:31] NAVEGADOR_LOG -> "GET /?JS_LOG=%5BJS_ERR%5D%20%3D%3D%3E%20%5BIMMICH%5D%20ERROR%3A%20No%20se%20pudieron%20cargar%20elementos%20de%20Immich. HTTP/1.1" 204 -
+[2026-09-23 10:45:36] IMMICH_SRV: Consultando assets del álbum 425241e5-16a8-4862-94c9-ec07f5a68565 via search/metadata...
+[2026-09-23 10:45:36] IMMICH_SRV: Respuesta HTTP exitosa. Procesando assets...
+[2026-09-23 10:45:36] IMMICH_SRV: Total elementos procesados del álbum: 250
+[2026-09-23 10:45:36] IMMICH_SRV: Sincronización completada (250 elementos guardados).
+[2026-09-23 10:51:17] IMMICH_SRV: Consultando assets del álbum 425241e5-16a8-4862-94c9-ec07f5a68565 via search/metadata...
+[2026-09-23 10:51:19] IMMICH_SRV: Respuesta HTTP exitosa. Procesando assets...
+[2026-09-23 10:51:19] IMMICH_SRV: Total elementos procesados del álbum: 250
+[2026-09-23 10:51:19] IMMICH_SRV: Sincronización completada (250 elementos guardados).
