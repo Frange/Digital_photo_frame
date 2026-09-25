@@ -1,13 +1,11 @@
 #!/bin/bash
 
-if [ -t 0 ]; then
-    nohup "$0" "$@" >/dev/null 2>&1 &
-    echo "Servidor iniciado en segundo plano."
-    echo
-    echo "Logs:"
-    echo "tail -f /home/pi/dashboard_navegador.log"
-    exit 0
-fi
+# COMENTADO TEMPORALMENTE: Ejecución directa en terminal para ver logs en vivo
+# if [ -t 0 ]; then
+#     nohup "$0" "$@" >> "$LOG_FILE" 2>&1 &
+#     echo "Servidor iniciado en segundo plano."
+#     exit 0
+# fi
 
 PIDFILE="/tmp/start_marco.pid"
 LOG_FILE="/home/pi/dashboard_navegador.log"
@@ -15,13 +13,16 @@ WEB_DIR="/home/pi/web"
 SERVER_SCRIPT="/home/pi/server.py"
 PORT=8080
 
+# Limpiar el log anterior por completo al iniciar
+> "$LOG_FILE"
+
 if [ -f "$PIDFILE" ] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null; then
     echo "El marco ya está ejecutándose."
     exit 1
 fi
 
 echo $$ > "$PIDFILE"
-exec > "$LOG_FILE" 2>&1
+exec > >(tee -a "$LOG_FILE") 2>&1
 
 echo
 echo "============================================================"
@@ -83,25 +84,20 @@ SERVER_PID=$!
 
 echo "[$(date)] server.py iniciado."
 echo "[$(date)] PID servidor: $SERVER_PID"
-echo "[$(date)] Esperando a que el servidor descargue el catálogo de Immich..."
+echo "[$(date)] Esperando al servidor HTTP..."
 
 SERVER_READY=0
-for i in $(seq 1 30); do
-    STATUS_JSON=$(curl --silent --max-time 2 "http://127.0.0.1:${PORT}/api/immich/status")
-    COUNT=$(echo "$STATUS_JSON" | grep -o '"count":[0-9]*' | grep -o '[0-9]*')
-    
-    if [ ! -z "$COUNT" ] && [ "$COUNT" -gt 0 ]; then
-        echo "[$(date)] ¡Catálogo listo con $COUNT elementos!"
+for i in $(seq 1 20); do
+    if curl --silent --max-time 1 "http://127.0.0.1:${PORT}/api/immich/status" >/dev/null 2>&1; then
         SERVER_READY=1
         break
     fi
-    echo "[$(date)] Esperando sincronización de Immich (intento $i/30)..."
-    sleep 2
+    sleep 1
 done
 
 if [ "$SERVER_READY" -ne 1 ]; then
     echo
-    echo "ERROR: El servidor Python no sincronizó los datos de Immich a tiempo."
+    echo "ERROR: El servidor Python no responde."
     echo "Comprueba:"
     echo
     echo "    tail -100 $LOG_FILE"
@@ -109,7 +105,7 @@ if [ "$SERVER_READY" -ne 1 ]; then
     exit 1
 fi
 
-echo "[$(date)] Servidor HTTP y catálogo funcionando."
+echo "[$(date)] Servidor HTTP funcionando."
 echo "[$(date)] Comprobando Immich..."
 
 IMMICH_STATUS=$(curl --silent --max-time 10 "http://127.0.0.1:${PORT}/api/immich/status")

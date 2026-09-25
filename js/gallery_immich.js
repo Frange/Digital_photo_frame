@@ -3,10 +3,6 @@ const GalleryImmich = {
     container: null,
     photoTimer: null,
     assets: [],
-    mediaElement: null,
-    preloadElement: null, // Elemento invisible para precargar la siguiente foto
-    retryCount: 0,
-    maxRetries: 5,
 
     async init() {
         console.log("==> [IMMICH] Inicializando galería de Immich...");
@@ -16,25 +12,30 @@ const GalleryImmich = {
             return;
         }
 
-        // Crear contenedor de precarga invisible si no existe
-        if (!this.preloadElement) {
-            this.preloadElement = document.createElement('img');
-            this.preloadElement.style.display = 'none';
-            document.body.appendChild(this.preloadElement);
+        // Bucle de espera inteligente: reintenta hasta que el servidor tenga fotos listas
+        let loaded = false;
+        let attempts = 0;
+        
+        while (!loaded && attempts < 30) {
+            attempts++;
+            console.log(`==> [IMMICH] Esperando catálogo (intento ${attempts}/30)...`);
+            loaded = await this.loadAssets();
+            if (!loaded) {
+                this.showLoadingMessage(`Sincronizando álbum de Immich... (${attempts}/30)`);
+                await new Promise(resolve => setTimeout(resolve, 3000));
+            }
         }
 
-        const loaded = await this.loadAssets();
         if (!loaded || this.assets.length === 0) {
-            console.error("==> [IMMICH] ERROR: No se pudieron cargar elementos de Immich. Reintentando en 10s...");
+            console.error("==> [IMMICH] ERROR: No se pudieron cargar elementos de Immich.");
             this.showError();
-            this.scheduleRetry();
             return;
         }
 
-        this.retryCount = 0; // Resetear contador si tuvo éxito
         console.log(`==> [IMMICH] Iniciando carrusel con ${this.assets.length} elementos.`);
         this.updateBackground();
 
+        // CONDICIÓN ANTI-PARPADEO: Si solo hay 1 foto, no programamos intervalos
         if (this.assets.length > 1) {
             const tiempo = (typeof CONFIG !== 'undefined' && CONFIG.tiempos) ? CONFIG.tiempos.foto : 20000;
             if (this.photoTimer) clearInterval(this.photoTimer);
@@ -42,8 +43,9 @@ const GalleryImmich = {
                 this.currentIndex = (this.currentIndex + 1) % this.assets.length;
                 console.log(`==> [IMMICH] Avanzando al siguiente índice: ${this.currentIndex}`);
                 this.updateBackground();
-                this.preloadNext(); // Precargar la siguiente en segundo plano
             }, tiempo);
+        } else {
+            console.log("==> [IMMICH] Solo hay 1 elemento. Manteniendo imagen estática sin parpadeos.");
         }
     },
 
@@ -64,42 +66,30 @@ const GalleryImmich = {
         }
     },
 
-    scheduleRetry() {
-        if (this.retryCount < this.maxRetries) {
-            this.retryCount++;
-            console.log(`==> [IMMICH] Reintentando conexión (Intento ${this.retryCount}/${this.maxRetries}) en 10 segundos...`);
-            setTimeout(() => {
-                this.init();
-            }, 10000);
-        } else {
-            console.error("==> [IMMICH] Máximo de reintentos alcanzados. Esperando ciclo largo...");
-            setTimeout(() => {
-                this.retryCount = 0;
-                this.init();
-            }, 60000); // Reintentar cada minuto si persiste el fallo total
-        }
+    showLoadingMessage(text) {
+        if (!this.container) return;
+        this.container.innerHTML = '';
+        const loadingElement = document.createElement('div');
+        loadingElement.style.cssText = 'position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); color:white; font-family:sans-serif; text-align:center; padding:30px; background:rgba(0,0,0,0.85); border-radius:15px;';
+        loadingElement.innerHTML = `
+            <div style="font-size: 32px; margin-bottom: 15px;">⏳</div>
+            <div style="font-size: 22px; margin-bottom: 10px;">Cargando Marco</div>
+            <div style="font-size: 14px; opacity: 0.8;">${text}</div>
+        `;
+        this.container.appendChild(loadingElement);
     },
 
     showError() {
         if (!this.container) return;
         this.container.innerHTML = '';
         const errorElement = document.createElement('div');
-        errorElement.style.cssText = 'position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); color:white; font-family:sans-serif; text-align:center; padding:30px; background:rgba(0,0,0,0.85); border-radius:15px; z-index:10;';
+        errorElement.style.cssText = 'position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); color:white; font-family:sans-serif; text-align:center; padding:30px; background:rgba(0,0,0,0.85); border-radius:15px;';
         errorElement.innerHTML = `
             <div style="font-size: 32px; margin-bottom: 15px;">⚠️</div>
-            <div style="font-size: 22px; margin-bottom: 10px;">Reconectando con Immich...</div>
-            <div style="font-size: 14px; opacity: 0.8;">Reintentando automáticamente en unos segundos.</div>
+            <div style="font-size: 22px; margin-bottom: 10px;">Sin contenido en Immich</div>
+            <div style="font-size: 14px; opacity: 0.8;">Comprueba la conexión con el servidor.</div>
         `;
         this.container.appendChild(errorElement);
-    },
-
-    preloadNext() {
-        if (this.assets.length <= 1) return;
-        const nextIndex = (this.currentIndex + 1) % this.assets.length;
-        const nextAsset = this.assets[nextIndex];
-        if (nextAsset && nextAsset.type === 'IMAGE') {
-            this.preloadElement.src = `/api/immich/thumbnail/${encodeURIComponent(nextAsset.id)}`;
-        }
     },
 
     updateBackground() {
@@ -108,40 +98,36 @@ const GalleryImmich = {
         if (!asset) return;
 
         const isVideo = asset.type === 'VIDEO';
-        const mediaUrl = `/api/immich/thumbnail/${encodeURIComponent(asset.id)}`;
+        const mediaUrl = `/api/immich/thumbnail/${encodeURIComponent(asset.id)}?t=${Date.now()}`;
 
         console.log(`==> [IMMICH] RENDERIZANDO [${this.currentIndex + 1}/${this.assets.length}] ID: ${asset.id}`);
 
-        if (!this.mediaElement || (isVideo && this.mediaElement.tagName !== 'VIDEO') || (!isVideo && this.mediaElement.tagName !== 'IMG')) {
-            while (this.container.firstChild) {
-                this.container.removeChild(this.container.firstChild);
-            }
-
-            if (isVideo) {
-                this.mediaElement = document.createElement('video');
-                Object.assign(this.mediaElement, { autoplay: true, muted: true, playsInline: true });
-                this.mediaElement.onended = () => { 
-                    if(this.assets.length > 1) {
-                        this.currentIndex = (this.currentIndex + 1) % this.assets.length;
-                        this.updateBackground();
-                        this.preloadNext();
-                    }
-                };
-            } else {
-                this.mediaElement = document.createElement('img');
-                this.mediaElement.onerror = () => {
-                    console.error(`==> [IMMICH] ERROR CARGANDO THUMBNAIL: ${mediaUrl}`);
-                };
-            }
-            this.mediaElement.id = 'bg-main';
-            this.container.appendChild(this.mediaElement);
+        while (this.container.firstChild) {
+            this.container.removeChild(this.container.firstChild);
         }
 
-        // Asignación directa: Como la imagen ya se precargó en segundo plano con preloadNext(), el navegador la sirve instantáneamente de su caché local sin parpadeo negro.
-        this.mediaElement.src = mediaUrl;
+        let mediaElement;
         if (isVideo) {
-            this.mediaElement.load();
+            mediaElement = document.createElement('video');
+            mediaElement.id = 'bg-main';
+            Object.assign(mediaElement, { autoplay: true, muted: true, playsInline: true });
+            mediaElement.src = mediaUrl;
+            mediaElement.onended = () => { 
+                if(this.assets.length > 1) {
+                    this.currentIndex = (this.currentIndex + 1) % this.assets.length;
+                    this.updateBackground();
+                }
+            };
+        } else {
+            mediaElement = document.createElement('img');
+            mediaElement.id = 'bg-main';
+            mediaElement.onerror = () => {
+                console.error(`==> [IMMICH] ERROR CARGANDO THUMBNAIL: ${mediaUrl}`);
+            };
+            mediaElement.src = mediaUrl;
         }
+
+        this.container.appendChild(mediaElement);
 
         const countEl = document.getElementById('gallery-count');
         const nameEl = document.getElementById('file-name');
