@@ -7,7 +7,7 @@ const CONFIG = {
 
     // --- INTEGRACIÓN IMMICH V2.0 ---
     immich: {
-        active: true, // Ponlo en false si quieres volver al modo fotos local
+        active: false, // Ponlo en false si quieres volver al modo fotos local
         baseUrl: "http://192.168.1.8:2283", // IP local y puerto de tu servidor Immich
         apiKey: "IMk2jvDwBiQblf8zF79gAGN0LjlqMV0UVguAtkI",          // Clave creada en Immich (Settings -> API Keys)
         //albumId: "",                         // Deja vacío "" para ver todas las fotos, o pega el ID de un álbum

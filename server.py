@@ -14,7 +14,6 @@ PORT = 8080
 IMMICH_URL = "http://192.168.1.11:2283"
 IMMICH_API_KEY = "dtB86uMq52qFuuvKOKboLdz6JAbZNkXPlyBLtakKgw"
 IMMICH_ALBUM_ID = "425241e5-16a8-4862-94c9-ec07f5a68565"
-IMMICH_REFRESH_SECONDS = 300
 CATALOG_FILE = "immich_data.json"
 WEB_ROOT = "/home/pi/web"
 
@@ -95,26 +94,24 @@ def search_immich():
     log(f"IMMICH_SRV: Total elementos procesados del álbum: {len(assets)}")
     return assets
 
-def sync_immich():
+def load_initial_catalog():
     global immich_catalog
-    while True:
-        try:
-            assets = search_immich()
-            catalog = {"assets": assets, "updatedAt": time.strftime("%Y-%m-%dT%H:%M:%S"), "error": None}
-            with catalog_lock:
-                immich_catalog = catalog
-                try:
-                    with open(CATALOG_FILE, "w", encoding="utf-8") as file:
-                        json.dump(catalog, file, ensure_ascii=False, indent=2)
-                except Exception as error:
-                    log(f"IMMICH_SRV ERROR guardando catálogo en disco: {error}")
-            log(f"IMMICH_SRV: Sincronización completada ({len(assets)} elementos guardados).")
-        except Exception as error:
-            error_message = str(error)
-            log(f"IMMICH_SRV ERROR en bucle de sinc: {error_message}")
-            with catalog_lock:
-                immich_catalog["error"] = error_message
-        time.sleep(IMMICH_REFRESH_SECONDS)
+    try:
+        assets = search_immich()
+        catalog = {"assets": assets, "updatedAt": time.strftime("%Y-%m-%dT%H:%M:%S"), "error": None}
+        with catalog_lock:
+            immich_catalog = catalog
+            try:
+                with open(CATALOG_FILE, "w", encoding="utf-8") as file:
+                    json.dump(catalog, file, ensure_ascii=False, indent=2)
+            except Exception as error:
+                log(f"IMMICH_SRV ERROR guardando catálogo en disco: {error}")
+        log(f"IMMICH_SRV: Carga inicial completada ({len(assets)} elementos listos).")
+    except Exception as error:
+        error_message = str(error)
+        log(f"IMMICH_SRV ERROR en carga inicial: {error_message}")
+        with catalog_lock:
+            immich_catalog["error"] = error_message
 
 def clean_and_prepare_catalog():
     if os.path.exists(CATALOG_FILE):
@@ -216,8 +213,11 @@ if __name__ == "__main__":
     log("==========================================")
     log(f"Web: {WEB_ROOT} | Puerto: {PORT}")
 
-    clean_and_prev_catalog = clean_and_prepare_catalog()
-    threading.Thread(target=sync_immich, daemon=True).start()
+    clean_and_prepare_catalog()
+    
+    # Cargamos el catálogo de Immich una sola vez al arrancar de forma síncrona 
+    # para que el endpoint /api/immich/status ya responda correctamente al script de inicio.
+    load_initial_catalog()
 
     with ReusableThreadingTCPServer(("", PORT), DashboardHandler) as httpd:
         log(f"Servidor escuchando en http://0.0.0.0:{PORT}")
