@@ -2,94 +2,107 @@ const GalleryLocal = {
     currentIndex: 0,
     container: null,
     photoTimer: null,
-    assets: [],
 
-    init() {
-        console.log("==> [MODO_LOCAL] >>> INICIALIZANDO GALLERY LOCAL (SD) V2 <<<");
+    logToServer(text) {
+        console.log(text);
+        try {
+            fetch('/?JS_LOG=' + encodeURIComponent(text)).catch(() => {});
+        } catch (e) {}
+    },
+
+    async init() {
+        this.logToServer("==> [DEBUGLOCAL] >>> INICIANDO GALLERY_LOCAL.JS (VERSIÓN BLINDADA) <<<");
         this.container = document.getElementById('bg-container');
         if (!this.container) {
-            console.error("==> [MODO_LOCAL] FATAL: No se encontró #bg-container en el DOM");
+            this.logToServer("==> [DEBUGLOCAL] FATAL: No existe #bg-container");
             return;
         }
 
-        let ruta = (typeof CONFIG !== 'undefined' && CONFIG.rutaFotos) ? CONFIG.rutaFotos : "./fotos/";
-        if (!ruta.endsWith('/')) {
-            ruta += '/';
-        }
-
-        // Extracción limpia y directa del listado global
-        let files = [];
         if (typeof LISTADO_GALERIA !== 'undefined' && Array.isArray(LISTADO_GALERIA)) {
-            files = LISTADO_GALERIA;
-            console.log(`==> [MODO_LOCAL] ¡LISTADO DETECTADO! Total de fotos reales: ${files.length}`);
-        } else {
-            console.error("==> [MODO_LOCAL] ERROR CRÍTICO: LISTADO_GALERIA no está definido en global. Comprueba index.html.");
-            files = ["foto1.jpg", "foto2.jpg", "foto3.jpg"];
-        }
+            CONFIG.files = LISTADO_GALERIA.filter(f => f && typeof f === 'string' && f.includes('.') && !f.includes('*'));
+            this.logToServer(`==> [DEBUGLOCAL] Archivos válidos cargados: ${CONFIG.files.length}`);
 
-        this.assets = files.map((file) => {
-            const cleanFile = String(file).replace(/^\.\/fotos\//, '').replace(/^fotos\//, '').trim();
-            return {
-                id: cleanFile,
-                type: 'IMAGE',
-                originalFileName: cleanFile,
-                url: `${ruta}${cleanFile}`
-            };
-        });
-
-        console.log(`==> [MODO_LOCAL] Assets listos para reproducir: ${this.assets.length}`);
-
-        if (this.assets.length > 0) {
-            this.updateBackground();
-
-            if (this.assets.length > 1) {
-                const tiempo = (typeof CONFIG !== 'undefined' && CONFIG.tiempos && CONFIG.tiempos.foto) ? CONFIG.tiempos.foto : 20000;
-                if (this.photoTimer) clearInterval(this.photoTimer);
-                this.photoTimer = setInterval(() => {
-                    this.currentIndex = (this.currentIndex + 1) % this.assets.length;
-                    console.log(`==> [MODO_LOCAL] Avanzando al índice: ${this.currentIndex + 1}/${this.assets.length}`);
-                    this.updateBackground();
-                }, tiempo);
+            // Mezcla aleatoria (Fisher-Yates)
+            for (let i = CONFIG.files.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [CONFIG.files[i], CONFIG.files[j]] = [CONFIG.files[j], CONFIG.files[i]];
             }
         } else {
-            console.error("==> [MODO_LOCAL] ERROR: La lista de assets locales está vacía.");
+            this.logToServer("==> [DEBUGLOCAL] AVISO: LISTADO_GALERIA no disponible, usando respaldo.");
+            CONFIG.files = ["foto1.jpg", "foto2.jpg", "foto3.jpg"];
         }
+
+        if (!CONFIG.rutaFotos) {
+            window.CONFIG = window.CONFIG || {};
+            window.CONFIG.rutaFotos = "./fotos/";
+        }
+
+        this.updateIP();
+        this.updateBackground();
+    },
+
+    async updateIP() {
+        try {
+            const res = await fetch('https://api.ipify.org?format=json');
+            const data = await res.json();
+            const ipEl = document.getElementById('ip-address');
+            if (ipEl) ipEl.innerText = data.ip;
+        } catch (e) {}
     },
 
     updateBackground() {
-        if (this.assets.length === 0) return;
-        const asset = this.assets[this.currentIndex];
-        const mediaUrl = asset.url;
+        if (this.photoTimer) clearTimeout(this.photoTimer);
+        if (!CONFIG.files || !CONFIG.files.length) return;
 
-        console.log(`==> [MODO_LOCAL] RENDERIZANDO [${this.currentIndex + 1}/${this.assets.length}] -> ${mediaUrl}`);
-
-        while (this.container.firstChild) {
-            this.container.removeChild(this.container.firstChild);
-        }
-
-        const mediaElement = document.createElement('img');
-        mediaElement.id = 'bg-main';
-        mediaElement.style.width = '100%';
-        mediaElement.style.height = '100%';
-        mediaElement.style.objectFit = 'cover';
-        mediaElement.style.position = 'absolute';
-        mediaElement.style.top = '0';
-        mediaElement.style.left = '0';
-
-        mediaElement.onerror = () => {
-            console.error(`==> [MODO_LOCAL] ERROR 404 / NO ENCONTRADA: ${mediaUrl}`);
-        };
+        const currentFile = CONFIG.files[this.currentIndex];
+        const ruta = CONFIG.rutaFotos || "./fotos/";
+        const path = ruta + currentFile;
+        const isVideo = currentFile.toLowerCase().endsWith('.mp4');
         
-        mediaElement.src = mediaUrl;
-        this.container.appendChild(mediaElement);
+        this.logToServer(`==> [DEBUGLOCAL] 📊 RENDERIZANDO [${this.currentIndex + 1} / ${CONFIG.files.length}] -> "${currentFile}"`);
+
+        const scheduleNext = () => {
+            if (this._firedNext) return;
+            this._firedNext = true;
+            const tiempo = (CONFIG && CONFIG.tiempos && CONFIG.tiempos.foto) ? CONFIG.tiempos.foto : 20000;
+            this.logToServer(`==> [DEBUGLOCAL] Temporizador programado: cambio de foto en ${tiempo / 1000}s`);
+            this.photoTimer = setTimeout(() => this.advanceIndexAndLoad(), tiempo);
+        };
+
+        this._firedNext = false;
+
+        // Delegamos el pintado seguro al renderizador unificado
+        GalleryRenderer.render(this.container, path, isVideo, {
+            onLoad: () => {
+                this.logToServer(`==> [DEBUGLOCAL] [OK] Imagen cargada: ${currentFile}`);
+                scheduleNext();
+            },
+            onEnded: () => this.advanceIndexAndLoad(),
+            onError: () => {
+                this.logToServer(`==> [DEBUGLOCAL] [ERROR] Falló al cargar: ${path}`);
+                this.advanceIndexAndLoad();
+            }
+        });
+
+        // Verificación de respaldo por caché instantánea
+        const mediaEl = document.getElementById('bg-main');
+        if (!isVideo && mediaEl && mediaEl.complete) {
+            this.logToServer(`==> [DEBUGLOCAL] [CACHÉ] Imagen completada al instante: ${currentFile}`);
+            scheduleNext();
+        }
 
         const countEl = document.getElementById('gallery-count');
         const nameEl = document.getElementById('file-name');
 
-        if (countEl) countEl.innerText = `${this.currentIndex + 1} / ${this.assets.length}`;
+        if (countEl) countEl.innerText = `${this.currentIndex + 1} / ${CONFIG.files.length}`;
         if (nameEl) {
-            let cleanName = asset.originalFileName.split('.')[0].replace(/_/g, ' ').replace(/-/g, ' ');
+            let cleanName = currentFile.split('.')[0].replace(/_/g, ' ').replace(/-/g, ' ').replace('foto', '');
             nameEl.innerText = cleanName.trim().toUpperCase();
         }
+    },
+
+    advanceIndexAndLoad() {
+        this.currentIndex = (this.currentIndex + 1) % CONFIG.files.length;
+        this.updateBackground();
     }
 };
