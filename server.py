@@ -17,8 +17,10 @@ IMMICH_URL = "http://192.168.1.11:2283"
 IMMICH_API_KEY = "r9AlV9ZMTloCAfyw8oWsnmGKi6UZh97OYexIAOfk"
 IMMICH_ALBUM_ID = "59037446-f94f-48a9-bd30-d78dcc444de7"
 CATALOG_FILE = "immich_data.json"
-CACHE_DIR = "immich_cache"
 WEB_ROOT = "/home/pi/web"
+
+# Directorio de caché exclusivo para Immich
+CACHE_DIR_IMMICH = os.path.join(WEB_ROOT, "cache", "immich")
 
 # Definición de Pines GPIO (Raspberry Pi Zero)
 PIN_BTN_PREV = 23   # Pulsador Anterior
@@ -124,33 +126,34 @@ def load_initial_catalog():
         with catalog_lock:
             immich_catalog["error"] = error_message
 
-def clean_and_prepare_catalog():
-    if os.path.exists(CATALOG_FILE):
-        try:
-            os.remove(CATALOG_FILE)
-            log("IMMICH_SRV: Archivo json anterior eliminado correctamente.")
-        except Exception as error:
-            log(f"IMMICH_SRV ERROR al eliminar json anterior: {error}")
-
 def get_immich_thumbnail(asset_id):
-    os.makedirs(CACHE_DIR, exist_ok=True)
-    cache_path = os.path.join(CACHE_DIR, f"{asset_id}.jpg")
+    os.makedirs(CACHE_DIR_IMMICH, exist_ok=True)
+    cache_path = os.path.join(CACHE_DIR_IMMICH, f"{asset_id}.jpg")
     
-    # Servir desde caché local si ya existe en la tarjeta SD
+    # 1. Si está en la caché de la SD, se sirve de manera local
     if os.path.exists(cache_path):
-        with open(cache_path, "rb") as f:
-            return 200, "image/jpeg", f.read()
-            
-    # Si no está en caché, descargarlo de Immich y guardarlo
-    status, content_type, data = immich_request(f"/api/assets/{asset_id}/thumbnail?size=preview", method="GET")
-    if status == 200 and data:
         try:
+            with open(cache_path, "rb") as f:
+                data = f.read()
+            print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] SERVER_CACHE [ID: {asset_id}] -> Servido desde CACHÉ LOCAL (SD)", flush=True)
+            return 200, "image/jpeg", data
+        except Exception as e:
+            log(f"IMMICH_THUMB [ID: {asset_id}] ERROR leyendo caché local: {e}")
+            
+    # 2. Si no está, se descarga de Immich
+    print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] IMMICH_FETCH [ID: {asset_id}] -> No está en caché. Descargando de Immich...", flush=True)
+    try:
+        status, content_type, data = immich_request(f"/api/assets/{asset_id}/thumbnail?size=preview", method="GET")
+        if status == 200 and data:
             with open(cache_path, "wb") as f:
                 f.write(data)
-        except Exception as e:
-            log(f"IMMICH_SRV ERROR guardando caché para {asset_id}: {e}")
-            
-    return status, content_type, data
+            print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] IMMICH_FETCH [ID: {asset_id}] -> Descargado con éxito y FICHERO DE CACHÉ CREADO.", flush=True)
+        else:
+            print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] IMMICH_FETCH [ID: {asset_id}] -> Error al descargar (Status: {status})", flush=True)
+        return status, content_type, data
+    except Exception as error:
+        log(f"IMMICH_THUMB [ID: {asset_id}] -> ERROR de conexión con Immich: {error}")
+        return 500, "text/plain", str(error).encode("utf-8")
 
 # --- HILO DE MONITOREO DE GPIO ---
 def setup_gpio():
@@ -168,7 +171,6 @@ def gpio_monitor_loop():
     
     while True:
         try:
-            # 1. Control del Interruptor (Immich / Local)
             current_switch_state = GPIO.input(PIN_SWITCH)
             if current_switch_state != last_switch_state:
                 time.sleep(0.05)
@@ -178,13 +180,11 @@ def gpio_monitor_loop():
                     log(f"GPIO: Cambio de interruptor detectado -> Modo {mode_name}")
                     broadcast_event("mode_change", mode_name)
 
-            # 2. Pulsador Anterior (GPIO 23)
             if GPIO.input(PIN_BTN_PREV) == GPIO.LOW:
                 log("GPIO: Pulsador ANTERIOR presionado.")
                 broadcast_event("btn_prev")
                 time.sleep(0.3)
 
-            # 3. Pulsador Siguiente (GPIO 24)
             if GPIO.input(PIN_BTN_NEXT) == GPIO.LOW:
                 log("GPIO: Pulsador SIGUIENTE presionado.")
                 broadcast_event("btn_next")
@@ -202,7 +202,7 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
     def log_message(self, format, *args):
         message = format % args
         if "JS_LOG=" in message:
-            return  # Ignoramos la línea HTTP cruda para gestionarla limpia abajo
+            return
         log("HTTP_REQ -> " + message)
 
     def send_json(self, data, status=200):
@@ -299,11 +299,8 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
         if "JS_LOG" in query:
             log_text = unquote(query["JS_LOG"][0])
             timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
-            
-            # Si el log contiene RENDERIZANDO, dejamos una línea en blanco antes
             if "RENDERIZANDO" in log_text:
                 print("", flush=True)
-                
             print(f"[{timestamp}] NAVEGADOR_LOG -> {log_text}", flush=True)
             self.send_response(204)
             self.end_headers()
@@ -321,22 +318,8 @@ if __name__ == "__main__":
     log("==========================================")
     log(f"Web: {WEB_ROOT} | Puerto: {PORT}")
 
-    try:
-        GPIO.setmode(GPIO.BCM)
-        GPIO.setwarnings(False)
-        GPIO.setup(PIN_SWITCH, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-        initial_switch = GPIO.input(PIN_SWITCH)
-    except Exception:
-        initial_switch = GPIO.HIGH
-
-    is_immich_mode = (initial_switch == GPIO.LOW)
-
-    if is_immich_mode:
-        log("INTERRUPTOR: Posición detectada en MODO IMMICH. Sincronizando álbum...")
-        clean_and_prepare_catalog()
-        load_initial_catalog()
-    else:
-        log("INTERRUPTOR: Posición detectada en MODO LOCAL. Omitiendo sincronización con Immich.")
+    log("IMMICH_SRV: Iniciando sincronización en segundo plano...")
+    threading.Thread(target=load_initial_catalog, daemon=True).start()
 
     gpio_thread = threading.Thread(target=gpio_monitor_loop, daemon=True)
     gpio_thread.start()
