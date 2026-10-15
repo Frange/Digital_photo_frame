@@ -27,12 +27,16 @@ const GalleryImmich = {
         }
 
         this.updateBackground();
+        this.startTimer();
+    },
 
+    startTimer() {
         if (this.assets.length > 1) {
             const tiempo = (typeof CONFIG !== 'undefined' && CONFIG.tiempos) ? CONFIG.tiempos.foto : 20000;
             if (this.photoTimer) clearInterval(this.photoTimer);
             this.photoTimer = setInterval(() => {
                 this.currentIndex = (this.currentIndex + 1) % this.assets.length;
+                console.log(`==> [IMMICH] Avanzando al siguiente índice: ${this.currentIndex}`);
                 this.updateBackground();
             }, tiempo);
         }
@@ -91,5 +95,21 @@ const GalleryImmich = {
             let cleanName = (asset.originalFileName || "Asset").split('.')[0].replace(/_/g, ' ').replace(/-/g, ' ');
             nameEl.innerText = cleanName.trim().toUpperCase();
         }
+    },
+
+    nextPhoto() {
+        console.log("==> [IMMICH] Botón físico Siguiente pulsado.");
+        if (this.photoTimer) clearInterval(this.photoTimer);
+        this.currentIndex = (this.currentIndex + 1) % this.assets.length;
+        this.updateBackground();
+        this.startTimer();
+    },
+
+    prevPhoto() {
+        console.log("==> [IMMICH] Botón físico Anterior pulsado.");
+        if (this.photoTimer) clearInterval(this.photoTimer);
+        this.currentIndex = (this.currentIndex - 1 + this.assets.length) % this.assets.length;
+        this.updateBackground();
+        this.startTimer();
     }
 };

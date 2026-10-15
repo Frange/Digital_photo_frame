@@ -11,7 +11,7 @@ const GalleryLocal = {
     },
 
     async init() {
-        this.logToServer("==> [DEBUGLOCAL] >>> INICIANDO GALLERY_LOCAL.JS (VERSIÓN BLINDADA) <<<");
+        this.logToServer("==> [DEBUGLOCAL] >>> INICIANDO GALLERY_LOCAL.JS (VERSIÓN BLINDADA + GPIO) <<<");
         this.container = document.getElementById('bg-container');
         if (!this.container) {
             this.logToServer("==> [DEBUGLOCAL] FATAL: No existe #bg-container");
@@ -84,7 +84,6 @@ const GalleryLocal = {
             }
         });
 
-        // Verificación de respaldo por caché instantánea
         const mediaEl = document.getElementById('bg-main');
         if (!isVideo && mediaEl && mediaEl.complete) {
             this.logToServer(`==> [DEBUGLOCAL] [CACHÉ] Imagen completada al instante: ${currentFile}`);
@@ -103,6 +102,20 @@ const GalleryLocal = {
 
     advanceIndexAndLoad() {
         this.currentIndex = (this.currentIndex + 1) % CONFIG.files.length;
+        this.updateBackground();
+    },
+
+    nextPhoto() {
+        this.logToServer("==> [DEBUGLOCAL] Botón físico Siguiente pulsado.");
+        if (this.photoTimer) clearTimeout(this.photoTimer);
+        this.currentIndex = (this.currentIndex + 1) % CONFIG.files.length;
+        this.updateBackground();
+    },
+
+    prevPhoto() {
+        this.logToServer("==> [DEBUGLOCAL] Botón físico Anterior pulsado.");
+        if (this.photoTimer) clearTimeout(this.photoTimer);
+        this.currentIndex = (this.currentIndex - 1 + CONFIG.files.length) % CONFIG.files.length;
         this.updateBackground();
     }
 };

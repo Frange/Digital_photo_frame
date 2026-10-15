@@ -8,20 +8,40 @@ import json
 import threading
 import time
 import os
+import queue
 from urllib.parse import urlparse, parse_qs, unquote
+import RPi.GPIO as GPIO
 
 PORT = 8080
 IMMICH_URL = "http://192.168.1.11:2283"
-IMMICH_API_KEY = "dtB86uMq52qFuuvKOKboLdz6JAbZNkXPlyBLtakKgw"
-IMMICH_ALBUM_ID = "425241e5-16a8-4862-94c9-ec07f5a68565"
+IMMICH_API_KEY = "r9AlV9ZMTloCAfyw8oWsnmGKi6UZh97OYexIAOfk"
+IMMICH_ALBUM_ID = "59037446-f94f-48a9-bd30-d78dcc444de7"
 CATALOG_FILE = "immich_data.json"
 WEB_ROOT = "/home/pi/web"
+
+# Definición de Pines GPIO (Raspberry Pi Zero)
+PIN_BTN_PREV = 23   # Pulsador Anterior
+PIN_BTN_NEXT = 24   # Pulsador Siguiente
+PIN_SWITCH = 25     # Interruptor Immich/Local
 
 catalog_lock = threading.Lock()
 immich_catalog = {"assets": [], "updatedAt": None, "error": None}
 
+# Cola para transmitir eventos en tiempo real a los clientes web (SSE)
+sse_clients = []
+sse_lock = threading.Lock()
+
 def log(message):
     print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {message}", flush=True)
+
+def broadcast_event(event_type, data=""):
+    with sse_lock:
+        msg = f"event: {event_type}\ndata: {data}\n\n"
+        for q in sse_clients:
+            try:
+                q.put_nowait(msg)
+            except Exception:
+                pass
 
 def immich_request(path, method="GET", body=None):
     url = IMMICH_URL.rstrip("/") + path
@@ -38,7 +58,7 @@ def search_immich():
     log(f"IMMICH_SRV: Consultando assets del álbum {IMMICH_ALBUM_ID} via search/metadata con paginación...")
     all_raw_items = []
     page = 1
-    take = 250  # Límite por página que acepta Immich
+    take = 250
 
     while True:
         body = {
@@ -50,14 +70,6 @@ def search_immich():
         try:
             status, _, raw_data = immich_request("/api/search/metadata", method="POST", body=body)
             data = json.loads(raw_data.decode("utf-8"))
-        except urllib.error.HTTPError as error:
-            error_body = ""
-            try:
-                error_body = error.read().decode("utf-8", errors="replace")
-            except Exception:
-                pass
-            log(f"IMMICH_SRV ERROR HTTP {error.code}: {error_body}")
-            raise RuntimeError(f"HTTP {error.code}: {error_body}")
         except Exception as error:
             log(f"IMMICH_SRV ERROR CONEXIÓN: {error}")
             raise RuntimeError(f"No se pudo consultar Immich: {error}")
@@ -74,11 +86,8 @@ def search_immich():
             break
 
         all_raw_items.extend(raw_items)
-        log(f"IMMICH_SRV: Página {page} procesada. Total acumulado: {len(all_raw_items)} elementos...")
-
         if len(raw_items) < take:
             break
-
         page += 1
 
     assets = []
@@ -124,6 +133,49 @@ def clean_and_prepare_catalog():
 def get_immich_thumbnail(asset_id):
     return immich_request(f"/api/assets/{asset_id}/thumbnail?size=preview", method="GET")
 
+# --- HILO DE MONITOREO DE GPIO ---
+def setup_gpio():
+    GPIO.setmode(GPIO.BCM)
+    GPIO.setwarnings(False)
+    GPIO.setup(PIN_BTN_PREV, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+    GPIO.setup(PIN_BTN_NEXT, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+    GPIO.setup(PIN_SWITCH, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+
+def gpio_monitor_loop():
+    setup_gpio()
+    log("GPIO: Monitor de hardware iniciado en segundo plano.")
+    
+    last_switch_state = GPIO.input(PIN_SWITCH)
+    
+    while True:
+        try:
+            # 1. Control del Interruptor (Immich / Local)
+            current_switch_state = GPIO.input(PIN_SWITCH)
+            if current_switch_state != last_switch_state:
+                time.sleep(0.05)
+                if GPIO.input(PIN_SWITCH) == current_switch_state:
+                    last_switch_state = current_switch_state
+                    mode_name = "LOCAL" if current_switch_state == GPIO.HIGH else "IMMICH"
+                    log(f"\nGPIO: Cambio de interruptor detectado -> Modo {mode_name}\n")
+                    broadcast_event("mode_change", mode_name)
+
+            # 2. Pulsador Anterior (GPIO 23)
+            if GPIO.input(PIN_BTN_PREV) == GPIO.LOW:
+                log(f"\nGPIO: Pulsador ANTERIOR presionado.\n")
+                broadcast_event("btn_prev")
+                time.sleep(0.3)
+
+            # 3. Pulsador Siguiente (GPIO 24)
+            if GPIO.input(PIN_BTN_NEXT) == GPIO.LOW:
+                log(f"\nGPIO: Pulsador SIGUIENTE presionado.\n")
+                broadcast_event("btn_next")
+                time.sleep(0.3)
+
+            time.sleep(0.05)
+        except Exception as e:
+            log(f"\nGPIO ERROR en bucle: {e}\n")
+            time.sleep(1)
+
 class DashboardHandler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=WEB_ROOT, **kwargs)
@@ -152,11 +204,47 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
         parsed = urlparse(self.path)
         path = parsed.path.rstrip("/")
 
+        # Endpoint SSE para eventos físicos en tiempo real
+        if path == "/api/events":
+            self.send_response(200)
+            self.send_header("Content-Type", "text/event-stream")
+            self.send_header("Cache-Control", "no-cache")
+            self.send_header("Connection", "keep-alive")
+            self.end_headers()
+            
+            q = queue.Queue()
+            with sse_lock:
+                sse_clients.append(q)
+            
+            try:
+                while True:
+                    try:
+                        msg = q.get(timeout=20)
+                        self.wfile.write(msg.encode("utf-8"))
+                        self.wfile.flush()
+                    except queue.Empty:
+                        self.wfile.write(b": ping\n\n")
+                        self.wfile.flush()
+            except Exception:
+                pass
+            finally:
+                with sse_lock:
+                    if q in sse_clients:
+                        sse_clients.remove(q)
+            return
+
+        if path == "/api/hardware/status":
+            try:
+                is_local = GPIO.input(PIN_SWITCH) == GPIO.HIGH
+                self.send_json({"mode": "LOCAL" if is_local else "IMMICH"})
+            except Exception:
+                self.send_json({"mode": "IMMICH"})
+            return
+
         if path == "/api/immich/photos":
             with catalog_lock:
                 response = dict(immich_catalog)
                 response["assets"] = list(immich_catalog.get("assets", []))
-            log(f"API: Sirviendo /api/immich/photos con {len(response['assets'])} assets.")
             self.send_json(response)
             return
 
@@ -186,11 +274,7 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_header("Cache-Control", "public, max-age=86400")
                 self.end_headers()
                 self.wfile.write(data)
-            except urllib.error.HTTPError as error:
-                log(f"IMMICH THUMBNAIL ERROR {asset_id}: HTTP {error.code}")
-                self.send_error(error.code, "Miniatura no disponible en Immich")
             except Exception as error:
-                log(f"THUMBNAIL EXCEPTION {asset_id}: {error}")
                 self.send_error(500, str(error))
             return
 
@@ -208,20 +292,37 @@ class ReusableThreadingTCPServer(socketserver.ThreadingTCPServer):
 
 if __name__ == "__main__":
     os.chdir(WEB_ROOT)
-    log("==========================================")
-    log("    SERVIDOR DASHBOARD + IMMICH (ÁLBUM)")
+    log(f"\n\n==========================================")
+    log("    SERVIDOR DASHBOARD + HARDWARE GPIO")
     log("==========================================")
     log(f"Web: {WEB_ROOT} | Puerto: {PORT}")
 
-    clean_and_prepare_catalog()
-    
-    # Cargamos el catálogo de Immich una sola vez al arrancar de forma síncrona 
-    # para que el endpoint /api/immich/status ya responda correctamente al script de inicio.
-    load_initial_catalog()
+    # Inicializamos los GPIOs de forma temprana para leer el interruptor al arrancar
+    try:
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setwarnings(False)
+        GPIO.setup(PIN_SWITCH, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+        initial_switch = GPIO.input(PIN_SWITCH)
+    except Exception:
+        initial_switch = GPIO.HIGH
+
+    # Ajusta esta lógica según el estado físico en el que quieras que cargue Immich (HIGH o LOW)
+    is_immich_mode = (initial_switch == GPIO.LOW)
+
+    if is_immich_mode:
+        log("INTERRUPTOR: Posición detectada en MODO IMMICH. Sincronizando álbum...")
+        clean_and_prepare_catalog()
+        load_initial_catalog()
+    else:
+        log("INTERRUPTOR: Posición detectada en MODO LOCAL. Omitiendo sincronización con Immich.")
+
+    gpio_thread = threading.Thread(target=gpio_monitor_loop, daemon=True)
+    gpio_thread.start()
 
     with ReusableThreadingTCPServer(("", PORT), DashboardHandler) as httpd:
         log(f"Servidor escuchando en http://0.0.0.0:{PORT}")
         try:
             httpd.serve_forever()
         except KeyboardInterrupt:
+            GPIO.cleanup()
             log("Servidor detenido por el usuario.")
