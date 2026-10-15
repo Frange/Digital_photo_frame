@@ -5,7 +5,7 @@ const GalleryImmich = {
     assets: [],
 
     async init() {
-        console.log("==> [IMMICH] Inicializando galería de Immich...");
+        console.log(`\n==> [IMMICH] Inicializando galería de Immich...`);
         this.container = document.getElementById('bg-container');
         if (!this.container) return;
 
@@ -36,7 +36,7 @@ const GalleryImmich = {
             if (this.photoTimer) clearInterval(this.photoTimer);
             this.photoTimer = setInterval(() => {
                 this.currentIndex = (this.currentIndex + 1) % this.assets.length;
-                console.log(`==> [IMMICH] Avanzando al siguiente índice: ${this.currentIndex}`);
+                console.log(`\n==> [IMMICH] Avanzando al siguiente índice: ${this.currentIndex}`);
                 this.updateBackground();
             }, tiempo);
         }
@@ -83,7 +83,7 @@ const GalleryImmich = {
                 }
             },
             onError: () => {
-                console.error(`==> [IMMICH] ERROR CARGANDO RECURSO: ${mediaUrl}`);
+                console.error(`\n==> [IMMICH] ERROR CARGANDO RECURSO: ${mediaUrl}`);
             }
         });
 
@@ -98,7 +98,7 @@ const GalleryImmich = {
     },
 
     nextPhoto() {
-        console.log("==> [IMMICH] Botón físico Siguiente pulsado.");
+        console.log("\n==> [IMMICH] Botón físico Siguiente pulsado.\n");
         if (this.photoTimer) clearInterval(this.photoTimer);
         this.currentIndex = (this.currentIndex + 1) % this.assets.length;
         this.updateBackground();
@@ -106,7 +106,7 @@ const GalleryImmich = {
     },
 
     prevPhoto() {
-        console.log("==> [IMMICH] Botón físico Anterior pulsado.");
+        console.log("\n==> [IMMICH] Botón físico Anterior pulsado.\n");
         if (this.photoTimer) clearInterval(this.photoTimer);
         this.currentIndex = (this.currentIndex - 1 + this.assets.length) % this.assets.length;
         this.updateBackground();

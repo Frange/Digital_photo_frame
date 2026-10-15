@@ -11,16 +11,16 @@ const GalleryLocal = {
     },
 
     async init() {
-        this.logToServer("==> [DEBUGLOCAL] >>> INICIANDO GALLERY_LOCAL.JS (VERSIÓN BLINDADA + GPIO) <<<");
+        this.logToServer("\n==> [DEBUGLOCAL] >>> INICIANDO GALLERY_LOCAL.JS (VERSIÓN BLINDADA + GPIO) <<<");
         this.container = document.getElementById('bg-container');
         if (!this.container) {
-            this.logToServer("==> [DEBUGLOCAL] FATAL: No existe #bg-container");
+            this.logToServer("\n==> [DEBUGLOCAL] FATAL: No existe #bg-container");
             return;
         }
 
         if (typeof LISTADO_GALERIA !== 'undefined' && Array.isArray(LISTADO_GALERIA)) {
             CONFIG.files = LISTADO_GALERIA.filter(f => f && typeof f === 'string' && f.includes('.') && !f.includes('*'));
-            this.logToServer(`==> [DEBUGLOCAL] Archivos válidos cargados: ${CONFIG.files.length}`);
+            this.logToServer(`\n==> [DEBUGLOCAL] Archivos válidos cargados: ${CONFIG.files.length}`);
 
             // Mezcla aleatoria (Fisher-Yates)
             for (let i = CONFIG.files.length - 1; i > 0; i--) {
@@ -28,7 +28,7 @@ const GalleryLocal = {
                 [CONFIG.files[i], CONFIG.files[j]] = [CONFIG.files[j], CONFIG.files[i]];
             }
         } else {
-            this.logToServer("==> [DEBUGLOCAL] AVISO: LISTADO_GALERIA no disponible, usando respaldo.");
+            this.logToServer("\n==> [DEBUGLOCAL] AVISO: LISTADO_GALERIA no disponible, usando respaldo.");
             CONFIG.files = ["foto1.jpg", "foto2.jpg", "foto3.jpg"];
         }
 
@@ -59,7 +59,7 @@ const GalleryLocal = {
         const path = ruta + currentFile;
         const isVideo = currentFile.toLowerCase().endsWith('.mp4');
         
-        this.logToServer(`==> [DEBUGLOCAL] 📊 RENDERIZANDO [${this.currentIndex + 1} / ${CONFIG.files.length}] -> "${currentFile}"`);
+        this.logToServer(`\n==> [DEBUGLOCAL] 📊 RENDERIZANDO [${this.currentIndex + 1} / ${CONFIG.files.length}] -> "${currentFile}"`);
 
         const scheduleNext = () => {
             if (this._firedNext) return;

@@ -17,6 +17,7 @@ IMMICH_URL = "http://192.168.1.11:2283"
 IMMICH_API_KEY = "r9AlV9ZMTloCAfyw8oWsnmGKi6UZh97OYexIAOfk"
 IMMICH_ALBUM_ID = "59037446-f94f-48a9-bd30-d78dcc444de7"
 CATALOG_FILE = "immich_data.json"
+CACHE_DIR = "immich_cache"
 WEB_ROOT = "/home/pi/web"
 
 # Definición de Pines GPIO (Raspberry Pi Zero)
@@ -32,7 +33,8 @@ sse_clients = []
 sse_lock = threading.Lock()
 
 def log(message):
-    print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {message}", flush=True)
+    timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
+    print(f"[{timestamp}] {message}", flush=True)
 
 def broadcast_event(event_type, data=""):
     with sse_lock:
@@ -131,7 +133,24 @@ def clean_and_prepare_catalog():
             log(f"IMMICH_SRV ERROR al eliminar json anterior: {error}")
 
 def get_immich_thumbnail(asset_id):
-    return immich_request(f"/api/assets/{asset_id}/thumbnail?size=preview", method="GET")
+    os.makedirs(CACHE_DIR, exist_ok=True)
+    cache_path = os.path.join(CACHE_DIR, f"{asset_id}.jpg")
+    
+    # Servir desde caché local si ya existe en la tarjeta SD
+    if os.path.exists(cache_path):
+        with open(cache_path, "rb") as f:
+            return 200, "image/jpeg", f.read()
+            
+    # Si no está en caché, descargarlo de Immich y guardarlo
+    status, content_type, data = immich_request(f"/api/assets/{asset_id}/thumbnail?size=preview", method="GET")
+    if status == 200 and data:
+        try:
+            with open(cache_path, "wb") as f:
+                f.write(data)
+        except Exception as e:
+            log(f"IMMICH_SRV ERROR guardando caché para {asset_id}: {e}")
+            
+    return status, content_type, data
 
 # --- HILO DE MONITOREO DE GPIO ---
 def setup_gpio():
@@ -156,24 +175,24 @@ def gpio_monitor_loop():
                 if GPIO.input(PIN_SWITCH) == current_switch_state:
                     last_switch_state = current_switch_state
                     mode_name = "LOCAL" if current_switch_state == GPIO.HIGH else "IMMICH"
-                    log(f"\nGPIO: Cambio de interruptor detectado -> Modo {mode_name}\n")
+                    log(f"GPIO: Cambio de interruptor detectado -> Modo {mode_name}")
                     broadcast_event("mode_change", mode_name)
 
             # 2. Pulsador Anterior (GPIO 23)
             if GPIO.input(PIN_BTN_PREV) == GPIO.LOW:
-                log(f"\nGPIO: Pulsador ANTERIOR presionado.\n")
+                log("GPIO: Pulsador ANTERIOR presionado.")
                 broadcast_event("btn_prev")
                 time.sleep(0.3)
 
             # 3. Pulsador Siguiente (GPIO 24)
             if GPIO.input(PIN_BTN_NEXT) == GPIO.LOW:
-                log(f"\nGPIO: Pulsador SIGUIENTE presionado.\n")
+                log("GPIO: Pulsador SIGUIENTE presionado.")
                 broadcast_event("btn_next")
                 time.sleep(0.3)
 
             time.sleep(0.05)
         except Exception as e:
-            log(f"\nGPIO ERROR en bucle: {e}\n")
+            log(f"GPIO ERROR en bucle: {e}")
             time.sleep(1)
 
 class DashboardHandler(http.server.SimpleHTTPRequestHandler):
@@ -183,8 +202,7 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
     def log_message(self, format, *args):
         message = format % args
         if "JS_LOG=" in message:
-            log("NAVEGADOR_LOG -> " + message)
-            return
+            return  # Ignoramos la línea HTTP cruda para gestionarla limpia abajo
         log("HTTP_REQ -> " + message)
 
     def send_json(self, data, status=200):
@@ -204,7 +222,6 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
         parsed = urlparse(self.path)
         path = parsed.path.rstrip("/")
 
-        # Endpoint SSE para eventos físicos en tiempo real
         if path == "/api/events":
             self.send_response(200)
             self.send_header("Content-Type", "text/event-stream")
@@ -280,7 +297,14 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
 
         query = parse_qs(parsed.query)
         if "JS_LOG" in query:
-            log("JS_REMOTE -> " + query["JS_LOG"][0])
+            log_text = unquote(query["JS_LOG"][0])
+            timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
+            
+            # Si el log contiene RENDERIZANDO, dejamos una línea en blanco antes
+            if "RENDERIZANDO" in log_text:
+                print("", flush=True)
+                
+            print(f"[{timestamp}] NAVEGADOR_LOG -> {log_text}", flush=True)
             self.send_response(204)
             self.end_headers()
             return
@@ -292,12 +316,11 @@ class ReusableThreadingTCPServer(socketserver.ThreadingTCPServer):
 
 if __name__ == "__main__":
     os.chdir(WEB_ROOT)
-    log(f"\n\n==========================================")
+    log("==========================================")
     log("    SERVIDOR DASHBOARD + HARDWARE GPIO")
     log("==========================================")
     log(f"Web: {WEB_ROOT} | Puerto: {PORT}")
 
-    # Inicializamos los GPIOs de forma temprana para leer el interruptor al arrancar
     try:
         GPIO.setmode(GPIO.BCM)
         GPIO.setwarnings(False)
@@ -306,7 +329,6 @@ if __name__ == "__main__":
     except Exception:
         initial_switch = GPIO.HIGH
 
-    # Ajusta esta lógica según el estado físico en el que quieras que cargue Immich (HIGH o LOW)
     is_immich_mode = (initial_switch == GPIO.LOW)
 
     if is_immich_mode:

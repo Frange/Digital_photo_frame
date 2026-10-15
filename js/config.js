@@ -5,6 +5,13 @@ const CONFIG = {
     showTopBanner: false,    
     showBottomBanner: false,  
     
+    // --- MODO NOCHE (APAGADO / ATENUACIÓN) ---
+    nightMode: {
+        enabled: true,
+        horaInicio: "00:00", // Hora a la que se oscurece la pantalla
+        horaFin: "08:00"     // Hora a la que vuelve a la normalidad
+    },
+
     // --- SECCIÓN DE ANUNCIANTES ---
     announcerSettings: {
         active: false,           

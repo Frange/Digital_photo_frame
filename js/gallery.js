@@ -31,6 +31,56 @@ const Gallery = {
 
         // Iniciamos el canal de escucha en tiempo real (SSE) para cambios en caliente
         this.initHardwareEvents();
+        
+        // Iniciamos el temporizador de Modo Noche
+        this.initNightMode();
+    },
+
+    initNightMode() {
+        if (typeof CONFIG === 'undefined' || !CONFIG.nightMode || !CONFIG.nightMode.enabled) return;
+
+        const checkNight = () => {
+            const now = new Date();
+            const currentTime = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+            const { horaInicio, horaFin } = CONFIG.nightMode;
+
+            let isNight = false;
+            if (horaInicio > horaFin) {
+                isNight = (currentTime >= horaInicio || currentTime < horaFin);
+            } else {
+                isNight = (currentTime >= horaInicio && currentTime < horaFin);
+            }
+
+            let overlay = document.getElementById('night-mode-overlay');
+            if (isNight) {
+                if (!overlay) {
+                    overlay = document.createElement('div');
+                    overlay.id = 'night-mode-overlay';
+                    overlay.style.position = 'fixed';
+                    overlay.style.top = '0';
+                    overlay.style.left = '0';
+                    overlay.style.width = '100vw';
+                    overlay.style.height = '100vh';
+                    overlay.style.background = 'black';
+                    overlay.style.zIndex = '999999';
+                    overlay.style.cursor = 'pointer';
+                    overlay.title = 'Modo Noche Activo (Pulsa para despertar temporalmente)';
+                    
+                    overlay.onclick = () => {
+                        overlay.style.display = 'none';
+                        setTimeout(() => { overlay.style.display = 'block'; }, 5 * 60 * 1000); // Se reactiva a los 5 mins
+                    };
+                    document.body.appendChild(overlay);
+                } else {
+                    overlay.style.display = 'block';
+                }
+            } else {
+                if (overlay) overlay.style.display = 'none';
+            }
+        };
+
+        checkNight();
+        setInterval(checkNight, 60000); // Comprueba cada minuto
     },
 
     initHardwareEvents() {
@@ -39,34 +89,20 @@ const Gallery = {
         console.log("==> [HARDWARE] Conectando al canal de eventos físicos (/api/events)...");
         this.sseConnection = new EventSource('/api/events');
 
-        // Escuchar evento de botón Anterior
         this.sseConnection.addEventListener('btn_prev', (e) => {
             console.log("==> [HARDWARE] Evento físico recibido: ANTERIOR");
             this.handlePrevious();
         });
 
-        // Escuchar evento de botón Siguiente
         this.sseConnection.addEventListener('btn_next', (e) => {
             console.log("==> [HARDWARE] Evento físico recibido: SIGUIENTE");
             this.handleNext();
         });
 
-        // Escuchar cambio de modo físico (IMMICH / LOCAL)
         this.sseConnection.addEventListener('mode_change', (e) => {
-            const nuevoModo = e.data; // "LOCAL" o "IMMICH"
+            const nuevoModo = e.data; 
             console.log(`==> [HARDWARE] Cambio de interruptor físico detectado -> ${nuevoModo}`);
-            
-            const currentlyImmich = (typeof CONFIG !== 'undefined' && CONFIG.immich && CONFIG.immich.active === true);
-            const targetIsImmich = (nuevoModo === 'IMMICH');
-
-            // Si la posición física del interruptor no coincide con el estado actual, recargamos la web en el modo correcto
-            if (currentlyImmich !== targetIsImmich) {
-                console.log("==> [HARDWARE] Actualizando configuración y recargando para aplicar el nuevo modo...");
-                window.CONFIG = window.CONFIG || {};
-                window.CONFIG.immich = window.CONFIG.immich || {};
-                window.CONFIG.immich.active = targetIsImmich;
-                setTimeout(() => window.location.reload(), 300);
-            }
+            setTimeout(() => window.location.reload(), 300);
         });
 
         this.sseConnection.onerror = (err) => {
@@ -76,11 +112,7 @@ const Gallery = {
 
     handlePrevious() {
         console.log("==> [HARDWARE] Evento físico recibido: ANTERIOR");
-        // Si GalleryImmich está definido y activo (o comprobando el DOM/estado), mandamos la orden ahí
-        if (typeof GalleryImmich !== 'undefined' && document.getElementById('bg-container')?.dataset.mode === 'immich') {
-            GalleryImmich.prevPhoto();
-        } else if (typeof GalleryImmich !== 'undefined' && window.location.href.includes('immich') || (typeof GalleryImmich !== 'undefined' && GalleryImmich.assets && GalleryImmich.assets.length > 0)) {
-            // Comprobación directa si Immich tiene assets cargados
+        if (typeof GalleryImmich !== 'undefined' && GalleryImmich.assets && GalleryImmich.assets.length > 0) {
             GalleryImmich.prevPhoto();
         } else if (typeof GalleryLocal !== 'undefined' && typeof GalleryLocal.prevPhoto === 'function') {
             GalleryLocal.prevPhoto();
